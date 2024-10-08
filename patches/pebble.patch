@@ -1,0 +1,41 @@
+--- a/vendor/github.com/cockroachdb/pebble/vfs/errors_unix.go	Fri Aug 19 10:55:44 2022
++++ b/vendor/github.com/cockroachdb/pebble/vfs/errors_unix.go	Fri Aug 19 10:55:44 2022
+@@ -2,8 +2,8 @@
+ // of this source code is governed by a BSD-style license that can be found in
+ // the LICENSE file.
+
+-//go:build darwin || dragonfly || freebsd || linux || openbsd
+-// +build darwin dragonfly freebsd linux openbsd
++//go:build darwin || dragonfly || freebsd || linux || openbsd || illumos
++// +build darwin dragonfly freebsd linux openbsd illumos
+
+ package vfs
+
+--- /dev/null	Fri Aug 19 10:52:18 2022
++++ b/vendor/github.com/cockroachdb/pebble/vfs/disk_usage_illumos.go	Wed Aug 17 15:09:39 2022
+@@ -0,0 +1,25 @@
++// Copyright 2020 The LevelDB-Go and Pebble Authors. All rights reserved. Use
++// of this source code is governed by a BSD-style license that can be found in
++// the LICENSE file.
++
++// +build illumos
++
++package vfs
++
++import "golang.org/x/sys/unix"
++
++func (defaultFS) GetDiskUsage(path string) (DiskUsage, error) {
++	stat := unix.Statvfs_t{}
++	if err := unix.Statvfs(path, &stat); err != nil {
++		return DiskUsage{}, err
++	}
++
++	freeBytes := uint64(stat.Bsize) * uint64(stat.Bfree)
++	availBytes := uint64(stat.Bsize) * uint64(stat.Bavail)
++	totalBytes := uint64(stat.Bsize) * uint64(stat.Blocks)
++	return DiskUsage{
++		AvailBytes: availBytes,
++		TotalBytes: totalBytes,
++		UsedBytes:  totalBytes - freeBytes,
++	}, nil
++}

@@ -15,7 +15,7 @@ package status
 
 // #cgo CPPFLAGS: -DJEMALLOC_NO_DEMANGLE
 // #cgo LDFLAGS: -ljemalloc
-// #cgo dragonfly freebsd LDFLAGS: -lm
+// #cgo illumos dragonfly freebsd LDFLAGS: -lm
 // #cgo linux LDFLAGS: -lrt -lm -lpthread
 //
 // #include <jemalloc/jemalloc.h>

@@ -162,7 +162,7 @@ DESTDIR :=
 
 DUPLFLAGS    := -t 100
 GOFLAGS      :=
-TAGS         :=
+TAGS         := stdmalloc
 ARCHIVE      := cockroach.src.tgz
 STARTFLAGS   := -s type=mem,size=1GiB --logtostderr
 BUILDTARGET  := ./pkg/cmd/cockroach
@@ -174,13 +174,6 @@ bindir       := $(prefix)/bin
 # We always want to build from the vendor directory.
 # Avoid reusing GOFLAGS as that is overwritten by various release processes.
 GOMODVENDORFLAGS := -mod=vendor
-
-ifeq "$(findstring -j,$(shell ps -o args= $$PPID))" ""
-ifdef NCPUS
-MAKEFLAGS += -j$(NCPUS)
-$(info Running make with -j$(NCPUS))
-endif
-endif
 
 help: ## Print help for targets with comments.
 	@echo "Usage:"
@@ -237,7 +230,7 @@ TAR     ?= tar
 
 # We install our vendored tools to a directory within this repository to avoid
 # overwriting any user-installed binaries of the same name in the default GOBIN.
-GO_INSTALL := GOBIN='$(abspath bin)' GOFLAGS= $(GO) install
+GO_INSTALL := GOBIN='$(abspath bin)' GOFLAGS= $(GO) install $(GOMODVENDORFLAGS)
 
 # Prefer tools we've installed with go install and Yarn to those elsewhere on
 # the PATH.
@@ -337,6 +330,7 @@ vendor/modules.txt: go.mod go.sum
 	$(GO) mod vendor
 	$(GO_INSTALL) -v github.com/goware/modvendor
 	modvendor -copy="**/*.c **/*.h **/*.proto" -include 'github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/rpc,github.com/prometheus/client_model'
+	for patch in patches/*.patch; do patch -p1 <$$patch; done
 
 # Update the git hooks and install commands from dependencies whenever they
 # change.
@@ -671,7 +665,7 @@ libgeos_inner: $(GEOS_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
 	@uptodate $(GEOS_NATIVE_LIB_DIR)/libgeos.$(DYN_EXT) $(GEOS_SRC_DIR) || $(MAKE) --no-print-directory -C $(GEOS_DIR) geos_c
 	mkdir -p $(DYN_LIB_DIR)
 	rm -f $(DYN_LIB_DIR)/lib{geos,geos_c}.$(DYN_EXT)
-	cp -L $(GEOS_NATIVE_LIB_DIR)/lib{geos,geos_c}.$(DYN_EXT) $(DYN_LIB_DIR)
+	cp $(GEOS_NATIVE_LIB_DIR)/lib{geos,geos_c}.$(DYN_EXT) $(DYN_LIB_DIR)
 
 $(LIBPROJ): $(PROJ_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
 	@uptodate $@ $(PROJ_SRC_DIR) || $(MAKE) --no-print-directory -C $(PROJ_DIR) proj
@@ -1503,8 +1497,6 @@ bin/.docgen_http: bin/docgen bin/.bootstrap
 	--out docs/generated/http \
 	--protoc-flags "-Ipkg -I$(GOGO_PROTOBUF_PATH) -I$(COREOS_PATH) -I$(GRPC_GATEWAY_GOOGLEAPIS_PATH) -I$(ERRORS_PATH) -I$(PROMETHEUS_PATH) ./pkg/server/serverpb/status.proto ./pkg/server/serverpb/admin.proto ./pkg/server/status/statuspb/status.proto"
 	touch $@
-
-.PHONY: docs/generated/redact_safe.md
 
 docs/generated/redact_safe.md:
 	./build/bazelutil/generate_redact_safe.sh >$@.tmp || { rm -f $@.tmp; exit 1; }

@@ -1,0 +1,36 @@
+--- a/vendor/github.com/knz/go-libedit/editline_other.go        Fri Aug 19 11:16:49 2022
++++ b/vendor/github.com/knz/go-libedit/editline_other.go        Fri Aug 19 11:16:49 2022
+@@ -12,7 +12,7 @@
+ // implied. See the License for the specific language governing
+ // permissions and limitations under the License.
+ 
+-// +build !darwin,!freebsd,!linux,!openbsd,!netbsd,!dragonfly
++// +build !darwin,!freebsd,!illumos,!linux,!openbsd,!netbsd,!dragonfly
+ 
+ package libedit
+ 
+--- a/vendor/github.com/knz/go-libedit/editline_unix.go Fri Aug 19 11:16:49 2022
++++ b/vendor/github.com/knz/go-libedit/editline_unix.go Fri Aug 19 11:16:49 2022
+@@ -12,7 +12,7 @@
+ // implied. See the License for the specific language governing
+ // permissions and limitations under the License.
+ 
+-// +build darwin freebsd linux openbsd netbsd dragonfly
++// +build darwin freebsd illumos linux openbsd netbsd dragonfly
+ 
+ package libedit
+ 
+--- a/vendor/github.com/knz/go-libedit/unix/editline_unix.go    Fri Aug 19 11:16:49 2022
++++ b/vendor/github.com/knz/go-libedit/unix/editline_unix.go    Fri Aug 19 11:16:49 2022
+@@ -25,8 +25,8 @@
+        common "github.com/knz/go-libedit/common"
+ )
+ 
+-// #cgo openbsd netbsd freebsd dragonfly darwin LDFLAGS: -ledit
+-// #cgo openbsd netbsd freebsd dragonfly darwin CPPFLAGS: -Ishim
++// #cgo openbsd netbsd illumos freebsd dragonfly darwin LDFLAGS: -ledit
++// #cgo openbsd netbsd illumos freebsd dragonfly darwin CPPFLAGS: -Ishim
+ // #cgo linux LDFLAGS: -lncurses
+ // #cgo linux CFLAGS: -Wno-unused-result -Wno-pointer-sign
+ // #cgo linux CPPFLAGS: -Isrc -Isrc/c-libedit -Isrc/c-libedit/editline -Isrc/c-libedit/linux-build -D_GNU_SOURCE
+

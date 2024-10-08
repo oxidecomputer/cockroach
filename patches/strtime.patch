@@ -1,0 +1,12 @@
+--- a/vendor/github.com/knz/strtime/strptime.c  Fri Aug 19 09:57:34 2022
++++ b/vendor/github.com/knz/strtime/strptime.c  Fri Aug 19 09:57:34 2022
+@@ -59,6 +59,9 @@
+ // #include "libc_private.h"
+ #include "timelocal.h"
+ // #include "tzfile.h"
++#ifdef __sun
++#include <alloca.h>
++#endif
+ 
+ static char * _strptime(const char *, const char *, struct mytm *, int *, locale_t);
+ 
