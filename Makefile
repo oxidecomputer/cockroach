@@ -180,7 +180,7 @@ help: ## Print help for targets with comments.
 	@echo "  make [target...] [VAR=foo VAR2=bar...]"
 	@echo ""
 	@echo "Useful commands:"
-	@grep -Eh '^[a-zA-Z._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(cyan)%-30s$(term-reset) %s\n", $$1, $$2}'
+	@git grep -Ph '^[a-zA-Z._-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(cyan)%-30s$(term-reset) %s\n", $$1, $$2}'
 	@echo ""
 	@echo "Useful variables:"
 	@awk 'BEGIN { RS = "" ; FS = "\n" } /^## /{split($$NF, a, ":="); printf "  $(cyan)%-30s$(term-reset)", a[1]; x=1; while ( x<NF ) { c = substr($$x, 4); printf "  %-30s", c; x++} print ""}' $(MAKEFILE_LIST) | sort
