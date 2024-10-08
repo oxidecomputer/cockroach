@@ -13,9 +13,7 @@ package builtins
 import (
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/cockroachdb/cockroach/pkg/sql/types"
-	"github.com/cockroachdb/cockroach/pkg/streaming"
-	"github.com/cockroachdb/cockroach/pkg/util/hlc"
-	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
+	"github.com/cockroachdb/errors"
 )
 
 func initReplicationBuiltins() {
@@ -27,6 +25,8 @@ func initReplicationBuiltins() {
 		builtins[k] = v
 	}
 }
+
+var errRequiresCCL = errors.New("replication streaming requires a CCL binary")
 
 // replication builtins contains the cluster to cluster replication built-in functions indexed by name.
 //
@@ -44,19 +44,7 @@ var replicationBuiltins = map[string]builtinDefinition{
 			},
 			ReturnType: tree.FixedReturnType(types.Int),
 			Fn: func(evalCtx *tree.EvalContext, args tree.Datums) (tree.Datum, error) {
-				mgr, err := streaming.GetReplicationStreamManager(evalCtx)
-				if err != nil {
-					return nil, err
-				}
-
-				streamID := streaming.StreamID(*args[0].(*tree.DInt))
-				cutoverTime := args[1].(*tree.DTimestampTZ).Time
-				cutoverTimestamp := hlc.Timestamp{WallTime: cutoverTime.UnixNano()}
-				err = mgr.CompleteStreamIngestion(evalCtx, evalCtx.Txn, streamID, cutoverTimestamp)
-				if err != nil {
-					return nil, err
-				}
-				return tree.NewDInt(tree.DInt(streamID)), err
+				return nil, errRequiresCCL
 			},
 			Info: "This function can be used to signal a running stream ingestion job to complete. " +
 				"The job will eventually stop ingesting, revert to the specified timestamp and leave the " +
@@ -81,19 +69,7 @@ var replicationBuiltins = map[string]builtinDefinition{
 			},
 			ReturnType: tree.FixedReturnType(types.Int),
 			Fn: func(evalCtx *tree.EvalContext, args tree.Datums) (tree.Datum, error) {
-				mgr, err := streaming.GetReplicationStreamManager(evalCtx)
-				if err != nil {
-					return nil, err
-				}
-				tenantID, err := mustBeDIntInTenantRange(args[0])
-				if err != nil {
-					return nil, err
-				}
-				jobID, err := mgr.StartReplicationStream(evalCtx, evalCtx.Txn, uint64(tenantID))
-				if err != nil {
-					return nil, err
-				}
-				return tree.NewDInt(tree.DInt(jobID)), err
+				return nil, errRequiresCCL
 			},
 			Info: "This function can be used on the producer side to start a replication stream for " +
 				"the specified tenant. The returned stream ID uniquely identifies created stream. " +
@@ -115,24 +91,7 @@ var replicationBuiltins = map[string]builtinDefinition{
 			},
 			ReturnType: tree.FixedReturnType(types.Bytes),
 			Fn: func(evalCtx *tree.EvalContext, args tree.Datums) (tree.Datum, error) {
-				mgr, err := streaming.GetReplicationStreamManager(evalCtx)
-				if err != nil {
-					return nil, err
-				}
-				frontier, err := hlc.ParseTimestamp(string(tree.MustBeDString(args[1])))
-				if err != nil {
-					return nil, err
-				}
-				streamID := streaming.StreamID(int(tree.MustBeDInt(args[0])))
-				sps, err := mgr.UpdateReplicationStreamProgress(evalCtx, streamID, frontier, evalCtx.Txn)
-				if err != nil {
-					return nil, err
-				}
-				rawStatus, err := protoutil.Marshal(&sps)
-				if err != nil {
-					return nil, err
-				}
-				return tree.NewDBytes(tree.DBytes(rawStatus)), nil
+				return nil, errRequiresCCL
 			},
 			Info: "This function can be used on the consumer side to heartbeat its replication progress to " +
 				"a replication stream in the source cluster. The returns a StreamReplicationStatus message " +
@@ -156,15 +115,7 @@ var replicationBuiltins = map[string]builtinDefinition{
 				[]string{"stream_event"},
 			),
 			func(evalCtx *tree.EvalContext, args tree.Datums) (tree.ValueGenerator, error) {
-				mgr, err := streaming.GetReplicationStreamManager(evalCtx)
-				if err != nil {
-					return nil, err
-				}
-				return mgr.StreamPartition(
-					evalCtx,
-					streaming.StreamID(tree.MustBeDInt(args[0])),
-					[]byte(tree.MustBeDBytes(args[1])),
-				)
+				return nil, errRequiresCCL
 			},
 			"Stream partition data",
 			tree.VolatilityVolatile,
@@ -182,21 +133,7 @@ var replicationBuiltins = map[string]builtinDefinition{
 			},
 			ReturnType: tree.FixedReturnType(types.Bytes),
 			Fn: func(evalCtx *tree.EvalContext, args tree.Datums) (tree.Datum, error) {
-				mgr, err := streaming.GetReplicationStreamManager(evalCtx)
-				if err != nil {
-					return nil, err
-				}
-
-				streamID := int64(tree.MustBeDInt(args[0]))
-				spec, err := mgr.GetReplicationStreamSpec(evalCtx, evalCtx.Txn, streaming.StreamID(streamID))
-				if err != nil {
-					return nil, err
-				}
-				rawSpec, err := protoutil.Marshal(spec)
-				if err != nil {
-					return nil, err
-				}
-				return tree.NewDBytes(tree.DBytes(rawSpec)), err
+				return nil, errRequiresCCL
 			},
 			Info: "This function can be used on the consumer side to get a replication stream specification " +
 				"for the specified stream starting from the specified 'start_from' timestamp. The consumer will " +

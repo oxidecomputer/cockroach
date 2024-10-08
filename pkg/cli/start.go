@@ -136,7 +136,7 @@ var serverCmds = append(StartCmds, mtStartSQLCmd)
 // customLoggingSetupCmds lists the commands that call setupLogging()
 // after other types of configuration.
 var customLoggingSetupCmds = append(
-	serverCmds, debugCheckLogConfigCmd, demoCmd, mtStartSQLProxyCmd, mtTestDirectorySvr, statementBundleRecreateCmd,
+	serverCmds, debugCheckLogConfigCmd, demoCmd, statementBundleRecreateCmd,
 )
 
 func initBlockProfile() {

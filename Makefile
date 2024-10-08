@@ -114,10 +114,10 @@ TESTS := .
 ## Benchmarks to run for use with `make bench`.
 BENCHES :=
 
-## Space delimited list of logic test files to run, for make testlogic/testccllogic/testoptlogic.
+## Space delimited list of logic test files to run, for make testlogic/testoptlogic.
 FILES :=
 
-## Name of a logic test configuration to run, for make testlogic/testccllogic/testoptlogic.
+## Name of a logic test configuration to run, for make testlogic/testoptlogic.
 ## (default: all configs. It's not possible yet to specify multiple configs in this way.)
 TESTCONFIG :=
 
@@ -191,8 +191,7 @@ help: ## Print help for targets with comments.
 		"make test PKG=./pkg/sql" "Run all unit tests in the ./pkg/sql package" \
 		"make test PKG=./pkg/sql/parser TESTS=TestParse" "Run the TestParse test in the ./pkg/sql/parser package." \
 		"make bench PKG=./pkg/sql/parser BENCHES=BenchmarkParse" "Run the BenchmarkParse benchmark in the ./pkg/sql/parser package." \
-		"make testlogic" "Run all base, opt exec builder, and CCL logic tests." \
-		"make testccllogic" "Run all CCL SQL logic tests." \
+		"make testlogic" "Run all base and opt exec builder logic tests." \
 		"make testoptlogic" "Run all opt exec builder SQL logic tests." \
 		"make testbaselogic" "Run all the OSS SQL logic tests." \
 		"make testlogic FILES='prepare|fk'" "Run the logic tests in the files named prepare and fk (the full path is not required)." \
@@ -425,7 +424,6 @@ C_DEPS_DIR := $(abspath c-deps)
 JEMALLOC_SRC_DIR := $(C_DEPS_DIR)/jemalloc
 GEOS_SRC_DIR     := $(C_DEPS_DIR)/geos
 PROJ_SRC_DIR     := $(C_DEPS_DIR)/proj
-KRB5_SRC_DIR     := $(C_DEPS_DIR)/krb5
 
 # Derived build variants.
 use-stdmalloc          := $(findstring stdmalloc,$(TAGS))
@@ -444,11 +442,9 @@ endif
 JEMALLOC_DIR := $(BUILD_DIR)/jemalloc
 GEOS_DIR     := $(BUILD_DIR)/geos
 PROJ_DIR     := $(BUILD_DIR)/proj
-KRB5_DIR     := $(BUILD_DIR)/krb5
 
 LIBJEMALLOC := $(JEMALLOC_DIR)/lib/libjemalloc.a
 LIBPROJ     := $(PROJ_DIR)/lib/libproj$(if $(target-is-windows),_4_9).a
-LIBKRB5     := $(KRB5_DIR)/lib/libgssapi_krb5.a
 
 DYN_LIB_DIR := lib
 DYN_EXT     := so
@@ -466,17 +462,7 @@ C_LIBS_COMMON = \
 	$(LIBPROJ)
 C_LIBS_SHORT = $(C_LIBS_COMMON)
 C_LIBS_OSS = $(C_LIBS_COMMON)
-C_LIBS_CCL = $(C_LIBS_COMMON)
 C_LIBS_DYNAMIC = $(LIBGEOS)
-
-# We only include krb5 on linux, non-musl builds.
-ifeq "$(findstring linux-gnu,$(TARGET_TRIPLE))" "linux-gnu"
-C_LIBS_CCL += $(LIBKRB5)
-C_LIBS_SHORT += $(LIBKRB5)
-KRB_CPPFLAGS := $(KRB5_DIR)/include
-KRB_DIR := $(KRB5_DIR)/lib
-override TAGS += gss
-endif
 
 # Go does not permit dashes in build tags. This is undocumented.
 native-tag := $(subst -,_,$(TARGET_TRIPLE))$(if $(use-stdmalloc),_stdmalloc)
@@ -504,7 +490,6 @@ CGO_PKGS := \
 	pkg/cli \
 	pkg/cli/clisqlshell \
 	pkg/server/status \
-	pkg/ccl/gssapiccl \
 	pkg/geo/geoproj \
 	vendor/github.com/knz/go-libedit/unix
 vendor/github.com/knz/go-libedit/unix-package := libedit_unix
@@ -522,8 +507,8 @@ $(BASE_CGO_FLAGS_FILES): Makefile build/defs.mk.sig vendor/modules.txt
 	@echo >> $@
 	@echo 'package $(if $($(@D)-package),$($(@D)-package),$(notdir $(@D)))' >> $@
 	@echo >> $@
-	@echo '// #cgo CPPFLAGS: $(addprefix -I,$(JEMALLOC_DIR)/include $(KRB_CPPFLAGS))' >> $@
-	@echo '// #cgo LDFLAGS: $(addprefix -L,$(JEMALLOC_DIR)/lib $(KRB_DIR) $(PROJ_DIR)/lib)' >> $@
+	@echo '// #cgo CPPFLAGS: $(addprefix -I,$(JEMALLOC_DIR)/include)' >> $@
+	@echo '// #cgo LDFLAGS: $(addprefix -L,$(JEMALLOC_DIR)/lib $(PROJ_DIR)/lib)' >> $@
 	@echo 'import "C"' >> $@
 
 vendor/github.com/knz/go-libedit/unix/zcgo_flags_extra.go: Makefile vendor/modules.txt
@@ -566,20 +551,6 @@ $(JEMALLOC_DIR)/Makefile: $(C_DEPS_DIR)/jemalloc-rebuild $(JEMALLOC_SRC_DIR)/con
 	@# NOTE: If you change the configure flags below, bump the version in
 	@# $(C_DEPS_DIR)/jemalloc-rebuild. See above for rationale.
 	cd $(JEMALLOC_DIR) && $(JEMALLOC_SRC_DIR)/configure $(xconfigure-flags) --enable-prof
-
-$(KRB5_SRC_DIR)/src/configure.in: | bin/.submodules-initialized
-
-$(KRB5_SRC_DIR)/src/configure: $(KRB5_SRC_DIR)/src/configure.in
-	cd $(KRB5_SRC_DIR)/src && autoreconf -Wno-obsolete
-
-$(KRB5_DIR)/Makefile: $(C_DEPS_DIR)/krb5-rebuild $(KRB5_SRC_DIR)/src/configure
-	rm -rf $(KRB5_DIR)
-	mkdir -p $(KRB5_DIR)
-	@# NOTE: If you change the configure flags below, bump the version in
-	@# $(C_DEPS_DIR)/krb5-rebuild. See above for rationale.
-	@# If CFLAGS is set to -g1 then make will fail.
-	@# We specify -fcommon to get around duplicate definition errors in recent gcc.
-	cd $(KRB5_DIR) && env -u CXXFLAGS CFLAGS="-fcommon"  $(KRB5_SRC_DIR)/src/configure $(xconfigure-flags) --enable-static --disable-shared
 
 $(GEOS_DIR)/Makefile: $(C_DEPS_DIR)/geos-rebuild | bin/.submodules-initialized
 	rm -rf $(GEOS_DIR)
@@ -670,15 +641,11 @@ libgeos_inner: $(GEOS_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
 $(LIBPROJ): $(PROJ_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
 	@uptodate $@ $(PROJ_SRC_DIR) || $(MAKE) --no-print-directory -C $(PROJ_DIR) proj
 
-$(LIBKRB5): $(KRB5_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
-	@uptodate $@ $(KRB5_SRC_DIR)/src || $(MAKE) --no-print-directory -C $(KRB5_DIR)
-
 # Convenient names for maintainers. Not used by other targets in the Makefile.
-.PHONY:  libjemalloc libgeos libproj libkrb5
+.PHONY:  libjemalloc libgeos libproj
 libjemalloc: $(LIBJEMALLOC)
 libgeos:     $(LIBGEOS)
 libproj:     $(LIBPROJ)
-libkrb5:     $(LIBKRB5)
 
 override TAGS += make $(native-tag)
 
@@ -695,7 +662,6 @@ build/defs.mk.sig: sig = $(PATH):$(CURDIR):$(GO):$(CC):$(CXX):$(TARGET_TRIPLE):$
 build/defs.mk.sig: .ALWAYS_REBUILD
 	@echo '$(sig)' | cmp -s - $@ || echo '$(sig)' > $@
 
-COCKROACH      := ./cockroach$(SUFFIX)
 COCKROACHOSS   := ./cockroachoss$(SUFFIX)
 COCKROACHSHORT := ./cockroachshort$(SUFFIX)
 COCKROACHSQL   := ./cockroach-sql$(SUFFIX)
@@ -832,32 +798,13 @@ OPTGEN_TARGETS = \
 	pkg/sql/opt/exec/explain/explain_factory.og.go \
 	pkg/sql/opt/exec/explain/plan_gist_factory.og.go \
 
-# removed-files is a list of files that used to exist in the
-# repository that need to be explicitly cleaned up to prevent build
-# failures.
-removed-files = pkg/ui/distccl/bindata.go
-
-removed-files-to-remove = $(strip $(foreach f,$(removed-files),$(wildcard $(f))))
-
-CLEANUP_TARGETS =
-ifneq ($(removed-files-to-remove),)
-CLEANUP_TARGETS = clean-removed-files
-endif
-
-.PHONY: clean-removed-files
-clean-removed-files:
-ifneq ($(removed-files-to-remove),)
-	rm -f $(removed-files-to-remove)
-endif
-
 test-targets := \
 	check test testshort testslow testrace testraceslow testdeadlock testbuild \
 	stress stressrace \
 	roachprod-stress roachprod-stressrace \
-	testlogic testbaselogic testccllogic testoptlogic
+	testlogic testbaselogic testoptlogic
 
-go-targets-ccl := \
-	$(COCKROACH) \
+go-targets := $(COCKROACHOSS) $(COCKROACHSHORT) $(COCKROACHSQL) \
 	bin/workload bin/roachprod bin/roachtest \
 	go-install \
 	bench benchshort \
@@ -867,19 +814,15 @@ go-targets-ccl := \
 	generate \
 	lint lintshort
 
-go-targets := $(go-targets-ccl) $(COCKROACHOSS) $(COCKROACHSHORT) $(COCKROACHSQL)
-
 .DEFAULT_GOAL := all
-all: build
+all: buildoss
 
 .PHONY: c-deps
-c-deps: $(C_LIBS_CCL) | $(C_LIBS_DYNAMIC)
+c-deps: $(C_LIBS_OSS) | $(C_LIBS_DYNAMIC)
 
 build-mode = build -o $@
 
 go-install: build-mode = install
-
-$(COCKROACH) go-install generate: pkg/ui/assets.ccl.installed
 
 $(COCKROACHOSS): BUILDTARGET = ./pkg/cmd/cockroach-oss
 $(COCKROACHOSS): $(C_LIBS_OSS) pkg/ui/assets.oss.installed | $(C_LIBS_DYNAMIC)
@@ -893,7 +836,7 @@ $(COCKROACHSQL): BUILDTARGET = ./pkg/cmd/cockroach-sql
 # For test targets, add a tag (used to enable extra assertions).
 $(test-targets): TAGS += crdb_test
 
-$(go-targets-ccl): $(C_LIBS_CCL) | $(C_LIBS_DYNAMIC)
+$(go-targets): $(C_LIBS_OSS) | $(C_LIBS_DYNAMIC)
 
 BUILDINFO = .buildinfo/tag .buildinfo/rev
 BUILD_TAGGED_RELEASE =
@@ -901,7 +844,7 @@ BUILD_TAGGED_RELEASE =
 ## Override for .buildinfo/tag
 BUILDINFO_TAG :=
 
-$(go-targets): bin/.bootstrap $(BUILDINFO) $(CGO_FLAGS_FILES) $(PROTOBUF_TARGETS) $(LIBPROJ) $(GENERATED_TARGETS) $(CLEANUP_TARGETS)
+$(go-targets): bin/.bootstrap $(BUILDINFO) $(CGO_FLAGS_FILES) $(PROTOBUF_TARGETS) $(LIBPROJ) $(GENERATED_TARGETS)
 $(go-targets): $(LOG_TARGETS) $(SQLPARSER_TARGETS) $(OPTGEN_TARGETS)
 $(go-targets): override LINKFLAGS += \
 	-X "github.com/cockroachdb/cockroach/pkg/build.tag=$(if $(BUILDINFO_TAG),$(BUILDINFO_TAG),$(shell cat .buildinfo/tag))" \
@@ -913,10 +856,10 @@ $(go-targets): override LINKFLAGS += \
 # The build.utcTime format must remain in sync with TimeFormat in
 # pkg/build/info.go. It is not installed in tests or in `buildshort` to avoid
 # busting the cache on every rebuild.
-$(COCKROACH) $(COCKROACHOSS) go-install: override LINKFLAGS += \
+$(COCKROACHOSS) go-install: override LINKFLAGS += \
 	-X "github.com/cockroachdb/cockroach/pkg/build.utcTime=$(shell date -u '+%Y/%m/%d %H:%M:%S')"
 
-settings-doc-gen = $(if $(filter buildshort,$(MAKECMDGOALS)),$(COCKROACHSHORT),$(COCKROACH))
+settings-doc-gen = $(if $(filter buildshort,$(MAKECMDGOALS)),$(COCKROACHSHORT),$(COCKROACHOSS))
 
 docs/generated/settings/settings.html: $(settings-doc-gen)
 	@$(settings-doc-gen) gen settings-list --format=rawhtml > $@
@@ -931,7 +874,7 @@ SETTINGS_DOC_PAGES := docs/generated/settings/settings.html docs/generated/setti
 # dependencies are rebuilt which is useful when switching between
 # normal and race test builds.
 .PHONY: go-install
-$(COCKROACH) $(COCKROACHOSS) $(COCKROACHSHORT) $(COCKROACHSQL) go-install:
+$(COCKROACHOSS) $(COCKROACHSHORT) $(COCKROACHSQL) go-install:
 	 $(xgo) $(build-mode) -v $(GOFLAGS) $(GOMODVENDORFLAGS) -tags '$(TAGS)' -ldflags '$(LINKFLAGS)' $(BUILDTARGET)
 
 # The build targets, in addition to producing a Cockroach binary, silently
@@ -947,31 +890,24 @@ $(COCKROACH) $(COCKROACHOSS) $(COCKROACHSHORT) $(COCKROACHSQL) go-install:
 # diagrams. When the generated files are not checked in, the breakage goes
 # unnoticed until the docs team comes along, potentially months later. Much
 # better to make the developer who introduces the breakage fix the breakage.
-.PHONY: build buildoss buildshort
-build: ## Build the CockroachDB binary.
-buildoss: ## Build the CockroachDB binary without any CCL-licensed code.
+.PHONY: buildoss buildshort
+buildoss: ## Build the CockroachDB binary.
 buildshort: ## Build the CockroachDB binary without the admin UI and RocksDB.
-build: $(COCKROACH)
 buildoss: $(COCKROACHOSS)
 buildshort: $(COCKROACHSHORT)
-build buildoss buildshort: $(if $(is-cross-compile),,$(DOCGEN_TARGETS))
-build buildshort: $(if $(is-cross-compile),,$(SETTINGS_DOC_PAGES))
-
-# For historical reasons, symlink cockroach to cockroachshort.
-# TODO(benesch): see if it would break anyone's workflow to remove this.
-buildshort:
-	ln -sf $(COCKROACHSHORT) $(COCKROACH)
+buildoss buildshort: $(if $(is-cross-compile),,$(DOCGEN_TARGETS))
+buildshort: $(if $(is-cross-compile),,$(SETTINGS_DOC_PAGES))
 
 .PHONY: install
 install: ## Install the CockroachDB binary.
-install: $(COCKROACH)
+install: $(COCKROACHOSS)
 	$(INSTALL) -d -m 755 $(DESTDIR)$(bindir)
-	$(INSTALL) -m 755 $(COCKROACH) $(DESTDIR)$(bindir)/cockroach
+	$(INSTALL) -m 755 $(COCKROACHOSS) $(DESTDIR)$(bindir)/cockroach
 
 .PHONY: start
-start: $(COCKROACH)
+start: $(COCKROACHOSS)
 start:
-	$(COCKROACH) start $(STARTFLAGS)
+	$(COCKROACHOSS) start $(STARTFLAGS)
 
 # Build, but do not run the tests.
 # PKG is expanded and all packages are built and moved to their directory.
@@ -1004,7 +940,7 @@ bench benchshort: TESTTIMEOUT := $(BENCHTIMEOUT)
 # that longer running benchmarks can skip themselves.
 benchshort: override TESTFLAGS += -benchtime=1ns -short
 
-.PHONY: check test testshort testrace testdeadlock testlogic testbaselogic testccllogic testoptlogic bench benchshort
+.PHONY: check test testshort testrace testdeadlock testlogic testbaselogic testoptlogic bench benchshort
 test: ## Run tests.
 check test testshort testrace testdeadlock bench benchshort:
 	$(xgo) test $(GOTESTFLAGS) $(GOFLAGS) $(GOMODVENDORFLAGS) -tags '$(TAGS)' -ldflags '$(LINKFLAGS)' -run "$(TESTS)" $(if $(BENCHES),-bench "$(BENCHES)") -timeout $(TESTTIMEOUT) $(PKG) $(TESTFLAGS)
@@ -1028,20 +964,16 @@ roachprod-stress roachprod-stressrace: bin/roachprod-stress
 	bin/roachprod-stress $(CLUSTER) $(patsubst github.com/cockroachdb/cockroach/%,./%,$(PKG)) $(STRESSFLAGS) -- \
 	  -test.run "$(TESTS)" $(filter-out -v,$(TESTFLAGS)) -test.v -test.timeout $(TESTTIMEOUT); \
 
-testlogic: testbaselogic testoptlogic testccllogic
+testlogic: testbaselogic testoptlogic
 
 testbaselogic: ## Run SQL Logic Tests.
 testbaselogic: bin/logictest
-
-testccllogic: ## Run SQL CCL Logic Tests.
-testccllogic: bin/logictestccl
 
 testoptlogic: ## Run SQL Logic Tests from opt package.
 testoptlogic: bin/logictestopt
 
 logic-test-selector := $(if $(TESTCONFIG),^$(TESTCONFIG)$$)/$(if $(FILES),^$(subst $(space),$$|^,$(FILES))$$)/$(SUBTESTS)
 testbaselogic: TESTS := TestLogic/$(logic-test-selector)
-testccllogic: TESTS := Test(CCL|Tenant)Logic/$(logic-test-selector)
 testoptlogic: TESTS := TestExecBuild/$(logic-test-selector)
 
 # Note: we specify -config here in addition to the filter on TESTS
@@ -1050,8 +982,8 @@ testoptlogic: TESTS := TestExecBuild/$(logic-test-selector)
 # does not prevent loading and initializing every default config in
 # turn (including setting up the test clusters, etc.). By specifying
 # -config, the extra initialization overhead is averted.
-testbaselogic testccllogic testoptlogic: TESTFLAGS := -test.v $(if $(FILES),-show-sql) $(if $(TESTCONFIG),-config $(TESTCONFIG))
-testbaselogic testccllogic testoptlogic:
+testbaselogic testoptlogic: TESTFLAGS := -test.v $(if $(FILES),-show-sql) $(if $(TESTCONFIG),-config $(TESTCONFIG))
+testbaselogic testoptlogic:
 	cd $($(<F)-package) && $(<F) -test.run "$(TESTS)" -test.timeout $(TESTTIMEOUT) $(TESTFLAGS)
 
 testraceslow: override GOFLAGS += -race
@@ -1140,7 +1072,7 @@ ARCHIVE_EXTRAS = \
 	$(BUILDINFO) \
 	$(SQLPARSER_TARGETS) \
 	$(OPTGEN_TARGETS) \
-	pkg/ui/assets.ccl.installed pkg/ui/assets.oss.installed
+	pkg/ui/assets.oss.installed
 
 # TODO(benesch): Make this recipe use `git ls-files --recurse-submodules`
 # instead of scripts/ls-files.sh once Git v2.11 is widely deployed.
@@ -1211,11 +1143,6 @@ PBTS := $(NODE_RUN) pkg/ui/node_modules/.bin/pbts
 # Unlike the protobuf compiler for Go and C++, the protobuf compiler for
 # JavaScript only needs the entrypoint protobufs to be listed. It automatically
 # compiles any protobufs the entrypoints depend upon.
-JS_PROTOS_CCL := $(filter %/ccl/storageccl/engineccl/enginepbccl/stats.proto,$(GO_PROTOS))
-UI_JS_CCL := pkg/ui/workspaces/db-console/ccl/src/js/protos.js
-UI_TS_CCL := pkg/ui/workspaces/db-console/ccl/src/js/protos.d.ts
-UI_PROTOS_CCL := $(UI_JS_CCL) $(UI_TS_CCL)
-
 UI_JS_OSS := pkg/ui/workspaces/db-console/src/js/protos.js
 UI_TS_OSS := pkg/ui/workspaces/db-console/src/js/protos.d.ts
 UI_PROTOS_OSS := $(UI_JS_OSS) $(UI_TS_OSS)
@@ -1240,17 +1167,6 @@ bin/.gw_protobuf_sources: $(GW_SERVER_PROTOS) $(GW_TS_PROTOS) $(GO_PROTOS) $(GOG
 	goimports -w $(GW_SOURCES)
 	touch $@
 
-# The next two rules must be kept exactly the same except the CCL one depends
-# on one additional proto. They generate the pbjs files from the protobuf
-# definitions, which then act is inputs to the pbts compiler, which creates
-# typescript definitions for the proto files afterwards.
-
-.SECONDARY: $(UI_JS_CCL)
-$(UI_JS_CCL): $(GW_PROTOS) $(GO_PROTOS) $(JS_PROTOS_CCL) pkg/ui/yarn.installed vendor/modules.txt
-	# Add comment recognized by reviewable.
-	echo '// GENERATED FILE DO NOT EDIT' > $@
-	$(PBJS) -t static-module -w es6 --strict-long --no-create --no-convert --no-delimited --no-verify --keep-case --path pkg --path ./vendor/github.com --path $(GOGO_PROTOBUF_PATH) --path $(ERRORS_PATH) --path $(COREOS_PATH) --path $(PROMETHEUS_PATH) --path $(GRPC_GATEWAY_GOOGLEAPIS_PATH) $(filter %.proto,$(GW_PROTOS) $(JS_PROTOS_CCL)) >> $@
-
 .SECONDARY: $(UI_JS_OSS)
 $(UI_JS_OSS): $(GW_PROTOS) $(GO_PROTOS) pkg/ui/yarn.installed vendor/modules.txt
 	# Add comment recognized by reviewable.
@@ -1259,10 +1175,9 @@ $(UI_JS_OSS): $(GW_PROTOS) $(GO_PROTOS) pkg/ui/yarn.installed vendor/modules.txt
 
 # End of PBJS-generated files.
 
-.SECONDARY: $(UI_TS_CCL) $(UI_TS_OSS)
-$(UI_TS_CCL): $(UI_JS_CCL) pkg/ui/yarn.installed
+.SECONDARY: $(UI_TS_OSS)
 $(UI_TS_OSS): $(UI_JS_OSS) pkg/ui/yarn.installed
-$(UI_TS_CCL) $(UI_TS_OSS):
+$(UI_TS_OSS):
 	# Add comment recognized by reviewable.
 	echo '// GENERATED FILE DO NOT EDIT' > $@
 	$(PBTS) $< >> $@
@@ -1275,7 +1190,7 @@ WEBPACK_DEV_SERVER := ./node_modules/.bin/webpack-dev-server
 WEBPACK_DASHBOARD  := ./opt/node_modules/.bin/webpack-dashboard
 
 .PHONY: ui-generate
-ui-generate: pkg/ui/assets.ccl.installed
+ui-generate: pkg/ui/assets.oss.installed
 
 .PHONY: ui-fonts
 ui-fonts:
@@ -1286,7 +1201,7 @@ ui-topo: pkg/ui/yarn.installed
 	pkg/ui/workspaces/db-console/scripts/topo.js
 
 .PHONY: ui-lint
-ui-lint: pkg/ui/yarn.installed $(UI_PROTOS_OSS) $(UI_PROTOS_CCL)
+ui-lint: pkg/ui/yarn.installed $(UI_PROTOS_OSS)
 	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(STYLINT) -c .stylintrc styl
 	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(TSC)
 	$(NODE_RUN) -C pkg/ui/workspaces/db-console yarn lint
@@ -1295,10 +1210,8 @@ ui-lint: pkg/ui/yarn.installed $(UI_PROTOS_OSS) $(UI_PROTOS_CCL)
 
 # DLLs are Webpack bundles, not Windows shared libraries. See "DLLs for speedy
 # builds" in the UI README for details.
-UI_CCL_DLLS := pkg/ui/workspaces/db-console/dist/protos.ccl.dll.js pkg/ui/workspaces/db-console/dist/vendor.oss.dll.js
-UI_CCL_MANIFESTS := pkg/ui/workspaces/db-console/protos.ccl.manifest.json pkg/ui/workspaces/db-console/vendor.oss.manifest.json
-UI_OSS_DLLS := $(subst .ccl,.oss,$(UI_CCL_DLLS))
-UI_OSS_MANIFESTS := $(subst .ccl,.oss,$(UI_CCL_MANIFESTS))
+UI_OSS_DLLS := pkg/ui/workspaces/db-console/dist/protos.oss.dll.js pkg/ui/workspaces/db-console/dist/vendor.oss.dll.js
+UI_OSS_MANIFESTS := pkg/ui/workspaces/db-console/protos.oss.manifest.json pkg/ui/workspaces/db-console/vendor.oss.manifest.json
 
 # (Ab)use pattern rules to teach Make that this one Webpack command produces two
 # files. Normally, Make would run the recipe twice if dist/FOO.js and
@@ -1314,23 +1227,19 @@ UI_OSS_MANIFESTS := $(subst .ccl,.oss,$(UI_CCL_MANIFESTS))
 #
 # [0]: https://stackoverflow.com/a/3077254/1122351
 # [1]: http://savannah.gnu.org/bugs/?19108
-.SECONDARY: $(UI_CCL_DLLS) $(UI_CCL_MANIFESTS) $(UI_OSS_DLLS) $(UI_OSS_MANIFESTS)
+.SECONDARY: $(UI_OSS_DLLS) $(UI_OSS_MANIFESTS)
 
 pkg/ui/workspaces/db-console/dist/%.oss.dll.js pkg/ui/workspaces/db-console/%.oss.manifest.json: export NODE_OPTIONS=--max-old-space-size=5000
 pkg/ui/workspaces/db-console/dist/%.oss.dll.js pkg/ui/workspaces/db-console/%.oss.manifest.json: pkg/ui/workspaces/db-console/webpack.%.js pkg/ui/yarn.installed $(CLUSTER_UI_JS) $(UI_PROTOS_OSS)
 	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(WEBPACK) -p --config webpack.$*.js --env.dist=oss
 
-pkg/ui/workspaces/db-console/dist/%.ccl.dll.js pkg/ui/workspaces/db-console/%.ccl.manifest.json: export NODE_OPTIONS=--max-old-space-size=5000
-pkg/ui/workspaces/db-console/dist/%.ccl.dll.js pkg/ui/workspaces/db-console/%.ccl.manifest.json: pkg/ui/workspaces/db-console/webpack.%.js pkg/ui/yarn.installed $(CLUSTER_UI_JS) $(UI_PROTOS_CCL)
-	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(WEBPACK) -p --config webpack.$*.js --env.dist=ccl
-
 .PHONY: ui-test
-ui-test: $(UI_CCL_DLLS) $(UI_CCL_MANIFESTS)
+ui-test: $(UI_OSS_DLLS) $(UI_OSS_MANIFESTS)
 	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(KARMA) start
 	$(NODE_RUN) -C pkg/ui/workspaces/cluster-ui yarn ci
 
 .PHONY: ui-test-watch
-ui-test-watch: $(UI_CCL_DLLS) $(UI_CCL_MANIFESTS)
+ui-test-watch: $(UI_OSS_DLLS) $(UI_OSS_MANIFESTS)
 	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(KARMA) start --no-single-run --auto-watch & \
 	$(NODE_RUN) -C pkg/ui/workspaces/cluster-ui yarn test
 
@@ -1338,13 +1247,12 @@ ui-test-watch: $(UI_CCL_DLLS) $(UI_CCL_MANIFESTS)
 ui-test-debug: $(UI_DLLS) $(UI_MANIFESTS)
 	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(KARMA) start --browsers Chrome --no-single-run --debug --auto-watch
 
-.SECONDARY: pkg/ui/assets.ccl.installed pkg/ui/assets.oss.installed
-pkg/ui/assets.ccl.installed: $(UI_CCL_DLLS) $(UI_CCL_MANIFESTS) $(UI_JS_CCL) $(shell find pkg/ui/workspaces/db-console/ccl -type f)
+.SECONDARY: pkg/ui/assets.oss.installed
 pkg/ui/assets.oss.installed: $(UI_OSS_DLLS) $(UI_OSS_MANIFESTS) $(UI_JS_OSS)
-pkg/ui/assets.%.installed: pkg/ui/workspaces/db-console/webpack.app.js $(shell find pkg/ui/workspaces/db-console/src pkg/ui/workspaces/db-console/styl -type f) | bin/.bootstrap
-	find pkg/ui/dist$*/assets -mindepth 1 -not -name .gitkeep -delete
+pkg/ui/assets.oss.installed: pkg/ui/workspaces/db-console/webpack.app.js $(shell find pkg/ui/workspaces/db-console/src pkg/ui/workspaces/db-console/styl -type f) | bin/.bootstrap
+	find pkg/ui/distoss/assets -mindepth 1 -not -name .gitkeep -delete
 	export NODE_OPTIONS=--max-old-space-size=5000
-	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(WEBPACK) --config webpack.app.js --env.dist=$*
+	$(NODE_RUN) -C pkg/ui/workspaces/db-console $(WEBPACK) --config webpack.app.js --env.dist=oss
 	touch $@
 
 pkg/ui/yarn.opt.installed:
@@ -1358,21 +1266,21 @@ ui-watch-secure: export TARGET ?= https://localhost:8080/
 .PHONY: ui-watch
 ui-watch: export TARGET ?= http://localhost:8080
 ui-watch ui-watch-secure: PORT := 3000
-ui-watch ui-watch-secure: $(UI_CCL_DLLS) pkg/ui/yarn.opt.installed
+ui-watch ui-watch-secure: $(UI_OSS_DLLS) pkg/ui/yarn.opt.installed
   # TODO (koorosh): running two webpack dev servers doesn't provide best performance and polling changes.
   # it has to be considered to use something like `parallel-webpack` lib.
   #
   # `node-run.sh` wrapper is removed because this command is supposed to be run in dev environment (not in docker of CI)
   # so it is safe to run yarn commands directly to preserve formatting and colors for outputs
 	yarn --cwd pkg/ui/workspaces/cluster-ui build:watch & \
-	yarn --cwd pkg/ui/workspaces/db-console webpack-dev-server --config webpack.app.js --env.dist=ccl --env.WEBPACK_SERVE --port $(PORT) --mode "development" $(WEBPACK_DEV_SERVER_FLAGS)
+	yarn --cwd pkg/ui/workspaces/db-console webpack-dev-server --config webpack.app.js --env.dist=oss --env.WEBPACK_SERVE --port $(PORT) --mode "development" $(WEBPACK_DEV_SERVER_FLAGS)
 
 .PHONY: ui-clean
 ui-clean: ## Remove build artifacts.
-	find pkg/ui/distccl/assets pkg/ui/distoss/assets -mindepth 1 -not -name .gitkeep -delete
-	rm -rf pkg/ui/assets.ccl.installed pkg/ui/assets.oss.installed
+	find pkg/ui/distoss/assets -mindepth 1 -not -name .gitkeep -delete
+	rm -rf pkg/ui/assets.oss.installed
 	rm -rf pkg/ui/dist_vendor/*
-	rm -f $(UI_PROTOS_CCL) $(UI_PROTOS_OSS)
+	rm -f $(UI_PROTOS_OSS)
 	rm -f pkg/ui/workspaces/db-console/*manifest.json
 	rm -rf pkg/ui/workspaces/cluster-ui/dist
 
@@ -1605,14 +1513,12 @@ clean-c-deps:
 	rm -rf $(JEMALLOC_DIR)
 	rm -rf $(GEOS_DIR)
 	rm -rf $(PROJ_DIR)
-	rm -rf $(KRB5_DIR)
 
 .PHONY: unsafe-clean-c-deps
 unsafe-clean-c-deps:
 	git -C $(JEMALLOC_SRC_DIR) clean -dxf
 	git -C $(GEOS_SRC_DIR)     clean -dxf
 	git -C $(PROJ_SRC_DIR)     clean -dxf
-	git -C $(KRB5_SRC_DIR)     clean -dxf
 
 .PHONY: cleanshort
 cleanshort: ## Clean up go build artifacts and go proto-generated code.
@@ -1635,7 +1541,7 @@ clean: cleanshort clean-c-deps
 .PHONY: maintainer-clean
 maintainer-clean: ## Like clean, but also remove some auto-generated SQL parser, optgen, and UI protos code.
 maintainer-clean: clean ui-maintainer-clean
-	rm -f $(SQLPARSER_TARGETS) $(LOG_TARGETS) $(OPTGEN_TARGETS) $(UI_PROTOS_OSS) $(UI_PROTOS_CCL)
+	rm -f $(SQLPARSER_TARGETS) $(LOG_TARGETS) $(OPTGEN_TARGETS) $(UI_PROTOS_OSS)
 
 .PHONY: unsafe-clean
 unsafe-clean: ## Like maintainer-clean, but also remove all untracked/ignored files.
@@ -1687,8 +1593,7 @@ xbins = \
 
 testbins = \
   bin/logictest \
-  bin/logictestopt \
-  bin/logictestccl
+  bin/logictestopt
 
 # Mappings for binaries that don't live in pkg/cmd.
 execgen-package = ./pkg/sql/colexec/execgen/cmd/execgen
@@ -1696,17 +1601,16 @@ langgen-package = ./pkg/sql/opt/optgen/cmd/langgen
 optfmt-package = ./pkg/sql/opt/optgen/cmd/optfmt
 optgen-package = ./pkg/sql/opt/optgen/cmd/optgen
 logictest-package = ./pkg/sql/logictest
-logictestccl-package = ./pkg/ccl/logictestccl
 logictestopt-package = ./pkg/sql/opt/exec/execbuilder
 terraformgen-package = ./pkg/roachprod/vm/aws/terraformgen
-logictest-bins := bin/logictest bin/logictestopt bin/logictestccl
+logictest-bins := bin/logictest bin/logictestopt
 
 # Additional dependencies for binaries that depend on generated code.
 #
 # TODO(benesch): Derive this automatically. This is getting out of hand.
 bin/workload bin/docgen bin/execgen bin/roachtest bin/roachvet $(logictest-bins): $(SQLPARSER_TARGETS) $(LOG_TARGETS) $(PROTOBUF_TARGETS)
 bin/workload bin/docgen bin/roachtest $(logictest-bins): $(LIBPROJ) $(CGO_FLAGS_FILES)
-bin/roachtest $(logictest-bins): $(C_LIBS_CCL) $(CGO_FLAGS_FILES) $(OPTGEN_TARGETS) | $(C_LIBS_DYNAMIC)
+bin/roachtest $(logictest-bins): $(C_LIBS_OSS) $(CGO_FLAGS_FILES) $(OPTGEN_TARGETS) | $(C_LIBS_DYNAMIC)
 
 PREREQS := GOFLAGS= bin/prereqs
 

@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
-	_ "github.com/cockroachdb/cockroach/pkg/ccl/kvccl/kvtenantccl"
 	"github.com/cockroachdb/cockroach/pkg/cli/clisqlclient"
 	"github.com/cockroachdb/cockroach/pkg/cli/clisqlexec"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
@@ -256,6 +255,8 @@ func TestTransientClusterSimulateLatencies(t *testing.T) {
 }
 
 func TestTransientClusterMultitenant(t *testing.T) {
+	skip.IgnoreLint(t, "tenant connector requires a CCL binary")
+
 	defer leaktest.AfterTest(t)()
 	defer log.Scope(t).Close(t)
 

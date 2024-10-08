@@ -19,7 +19,6 @@
   "dependencies": {
     "@cockroachlabs/cluster-ui": "link:../cluster-ui",
     "@cockroachlabs/crdb-protobuf-client": "link:./src/js",
-    "@cockroachlabs/crdb-protobuf-client-ccl": "link:./ccl/src/js",
     "@cockroachlabs/design-tokens": "0.4.5",
     "@cockroachlabs/icons": "0.3.0",
     "analytics-node": "^3.5.0",

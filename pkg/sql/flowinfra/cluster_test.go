@@ -19,7 +19,6 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
-	_ "github.com/cockroachdb/cockroach/pkg/ccl/kvccl/kvtenantccl"
 	"github.com/cockroachdb/cockroach/pkg/keys"
 	"github.com/cockroachdb/cockroach/pkg/kv"
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver"
@@ -38,6 +37,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/sql/types"
 	"github.com/cockroachdb/cockroach/pkg/testutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/serverutils"
+	"github.com/cockroachdb/cockroach/pkg/testutils/skip"
 	"github.com/cockroachdb/cockroach/pkg/testutils/sqlutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/testcluster"
 	"github.com/cockroachdb/cockroach/pkg/util/encoding"
@@ -325,6 +325,7 @@ func TestClusterFlow(t *testing.T) {
 
 func TestTenantClusterFlow(t *testing.T) {
 	defer leaktest.AfterTest(t)()
+	skip.IgnoreLint(t, "tenant connector requires a CCL binary")
 	defer log.Scope(t).Close(t)
 	ctx := context.Background()
 	const numPods = 3

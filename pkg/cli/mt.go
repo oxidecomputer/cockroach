@@ -15,8 +15,6 @@ import "github.com/spf13/cobra"
 func init() {
 	cockroachCmd.AddCommand(mtCmd)
 	mtCmd.AddCommand(mtStartSQLCmd)
-	mtCmd.AddCommand(mtStartSQLProxyCmd)
-	mtCmd.AddCommand(mtTestDirectorySvr)
 
 	mtCertsCmd.AddCommand(
 		mtCreateTenantCACertCmd,

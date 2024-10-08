@@ -31,7 +31,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/testutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/diagutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/serverutils"
-	"github.com/cockroachdb/cockroach/pkg/testutils/skip"
 	"github.com/cockroachdb/cockroach/pkg/testutils/sqlutils"
 	"github.com/cockroachdb/cockroach/pkg/util/cloudinfo"
 	"github.com/cockroachdb/cockroach/pkg/util/treeprinter"
@@ -80,7 +79,7 @@ import (
 //    line to the string in the second line. This is useful to eliminate
 //    non-determinism in the output.
 //
-func TelemetryTest(t *testing.T, serverArgs []base.TestServerArgs, testTenant bool) {
+func TelemetryTest(t *testing.T, serverArgs []base.TestServerArgs) {
 	// Note: these tests cannot be run in parallel (with each other or with other
 	// tests) because telemetry counters are global.
 	datadriven.Walk(t, "testdata/telemetry", func(t *testing.T, path string) {
@@ -99,26 +98,6 @@ func TelemetryTest(t *testing.T, serverArgs []base.TestServerArgs, testTenant bo
 				return test.RunTest(td, test.serverDB, reporter.ReportDiagnostics, sqlServer)
 			})
 		})
-
-		if testTenant {
-			// Run test against logical tenant cluster.
-			t.Run("tenant", func(t *testing.T) {
-				// TODO(andyk): Re-enable these tests once tenant clusters fully
-				// support the features they're using.
-				switch path {
-				case "testdata/telemetry/execution",
-					"testdata/telemetry/planning",
-					"testdata/telemetry/sql-stats":
-					skip.WithIssue(t, 47893, "tenant clusters do not support SQL features used by this test")
-				}
-
-				datadriven.RunTest(t, path, func(t *testing.T, td *datadriven.TestData) string {
-					sqlServer := test.server.SQLServer().(*sql.Server)
-					reporter := test.tenant.DiagnosticsReporter().(*diagnostics.Reporter)
-					return test.RunTest(td, test.tenantDB, reporter.ReportDiagnostics, sqlServer)
-				})
-			})
-		}
 	})
 }
 
@@ -128,8 +107,6 @@ type telemetryTest struct {
 	cluster        serverutils.TestClusterInterface
 	server         serverutils.TestServerInterface
 	serverDB       *gosql.DB
-	tenant         serverutils.TestTenantInterface
-	tenantDB       *gosql.DB
 	tempDirCleanup func()
 	allowlist      featureAllowlist
 	rewrites       []rewrite
@@ -168,13 +145,6 @@ func (tt *telemetryTest) Start(t *testing.T, serverArgs []base.TestServerArgs) {
 	tt.server = tt.cluster.Server(0)
 	tt.serverDB = tt.cluster.ServerConn(0)
 	tt.prepareCluster(tt.serverDB)
-
-	tt.tenant, tt.tenantDB = serverutils.StartTenant(tt.t, tt.server, base.TestTenantArgs{
-		TenantID:                    serverutils.TestTenantID(),
-		AllowSettingClusterSettings: true,
-		TestingKnobs:                mapServerArgs[0].Knobs,
-	})
-	tt.prepareCluster(tt.tenantDB)
 }
 
 func (tt *telemetryTest) Close() {

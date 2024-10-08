@@ -1132,7 +1132,8 @@ func TestShowLastQueryStatisticsUnknown(t *testing.T) {
 // - In a single-tenant environment, the transaction deadline should use the leased
 //   descriptor expiration.
 // - In a multi-tenant environment, the transaction deadline should be set to
-//   min(sqlliveness.Session expiry, lease descriptor expiration).
+//   min(sqlliveness.Session expiry, lease descriptor expiration). (These tests
+//   were removed because the tenant connector requires a CCL binary.)
 func TestTransactionDeadline(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 
@@ -1210,83 +1211,6 @@ func TestTransactionDeadline(t *testing.T) {
 	tc := serverutils.StartNewTestCluster(t, 1, testClusterArgs)
 	defer tc.Stopper().Stop(ctx)
 	s := tc.Server(0)
-
-	// Setup a dynamic session override which will be used in subsequent tests to ensure the transaction
-	// deadline is set accurately. Use clusterSQLLiveness for bootstrapping the tenant.
-	_, sqlConn := serverutils.StartTenant(t, s,
-		base.TestTenantArgs{
-			TenantID:     serverutils.TestTenantID(),
-			TestingKnobs: knobs,
-		})
-	tdb := sqlutils.MakeSQLRunner(sqlConn)
-	// Set up a dummy database and table in the tenant to write to.
-	tdb.Exec(t, `
-CREATE DATABASE t1;
-CREATE TABLE t1.test (k INT PRIMARY KEY, v TEXT);
-`)
-
-	t.Run("session_expiry_overrides_lease_deadline", func(t *testing.T) {
-		// Deliberately set the sessionDuration to be less than the lease duration
-		// to confirm that the sessionDuration overrides the lease duration while
-		// setting the transaction deadline.
-		sessionDuration := base.DefaultDescriptorLeaseDuration - time.Minute
-		fs := fakeSession{exp: s.Clock().Now().Add(sessionDuration.Nanoseconds(), 0)}
-		defer setClientSessionOverride(&fs)()
-
-		txn, err := sqlConn.Begin()
-		if err != nil {
-			t.Fatal(err)
-		}
-		txnID := getTxnID(t, txn)
-		locked(func() { mu.txnID = txnID })
-		_, err = txn.ExecContext(ctx, "INSERT INTO t1.test(k, v) VALUES (1, 'abc')")
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = txn.Commit()
-		require.NoError(t, err)
-		locked(func() { require.True(t, fs.Expiration().EqOrdering(mu.txnDeadline)) })
-	})
-
-	t.Run("lease_deadline_overrides_session_expiry", func(t *testing.T) {
-		// Deliberately set the session duration to be more than the lease duration
-		// to confirm that the lease duration overrides the session duration while
-		// setting the transaction deadline
-		sessionDuration := base.DefaultDescriptorLeaseDuration + time.Minute
-		fs := fakeSession{exp: s.Clock().Now().Add(sessionDuration.Nanoseconds(), 0)}
-		defer setClientSessionOverride(&fs)()
-
-		txn, err := sqlConn.Begin()
-		if err != nil {
-			t.Fatal(err)
-		}
-		txnID := getTxnID(t, txn)
-		locked(func() { mu.txnID = txnID })
-		_, err = txn.ExecContext(ctx, "UPSERT INTO t1.test(k, v) VALUES (1, 'abc')")
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = txn.Commit()
-		require.NoError(t, err)
-
-		locked(func() { require.True(t, mu.txnDeadline.Less(fs.Expiration())) })
-	})
-
-	t.Run("expired session leads to clear error", func(t *testing.T) {
-		// In this test we use an intentionally expired session in the tenant
-		// and observe that we get a clear error indicating that the session
-		// was expired.
-		sessionDuration := -time.Nanosecond
-		fs := fakeSession{exp: s.Clock().Now().Add(sessionDuration.Nanoseconds(), 0)}
-		defer setClientSessionOverride(&fs)()
-		txn, err := sqlConn.Begin()
-		if err != nil {
-			t.Fatal(err)
-		}
-		_, err = txn.ExecContext(ctx, "UPSERT INTO t1.test(k, v) VALUES (1, 'abc')")
-		require.Regexp(t, `liveness session expired (\S+) before transaction`, err)
-		require.NoError(t, txn.Rollback())
-	})
 
 	t.Run("single_tenant_ignore_session_expiry", func(t *testing.T) {
 		// In this test, we check that the session expiry is ignored in a single-tenant

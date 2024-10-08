@@ -753,6 +753,7 @@ func getUserConn(t *testing.T, username string, server serverutils.TestServerInt
 // main statement with a timeout is blocked.
 func TestTenantStatementTimeoutAdmissionQueueCancelation(t *testing.T) {
 	defer leaktest.AfterTest(t)()
+	skip.IgnoreLint(t, "tenant connector requires a CCL binary")
 	defer log.Scope(t).Close(t)
 
 	skip.UnderStress(t, "times out under stress")

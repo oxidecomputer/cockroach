@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	cloud.google.com/go/kms v1.1.0
-	cloud.google.com/go/pubsub v1.16.0
 	cloud.google.com/go/storage v1.21.0
 	github.com/Azure/azure-sdk-for-go v57.1.0+incompatible
 	github.com/Azure/azure-storage-blob-go v0.14.0
@@ -16,7 +15,6 @@ require (
 	github.com/MichaelTJones/walk v0.0.0-20161122175330-4748e29d5718
 	github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46
 	github.com/PuerkitoBio/goquery v1.5.1
-	github.com/Shopify/sarama v1.29.0
 	github.com/Shopify/toxiproxy v2.1.4+incompatible
 	github.com/VividCortex/ewma v1.1.1
 	github.com/abourget/teamcity v0.0.0-00010101000000-000000000000
@@ -55,7 +53,6 @@ require (
 	github.com/cockroachdb/ttycolor v0.0.0-20210902133924-c7d7dcdde4e8
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd
 	github.com/containerd/containerd v1.5.4
-	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/dave/dst v0.24.0
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v20.10.8+incompatible
@@ -208,9 +205,6 @@ require (
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/djherbis/atime v1.1.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/eapache/go-resiliency v1.2.0 // indirect
-	github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 // indirect
-	github.com/eapache/queue v1.1.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
@@ -288,11 +282,9 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/openzipkin/zipkin-go v0.2.5 // indirect
 	github.com/pelletier/go-toml v1.9.3 // indirect
-	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/pquerna/cachecontrol v0.0.0-20200921180117-858c6e7e6b7e // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/rivo/uniseg v0.1.0 // indirect
@@ -324,7 +316,6 @@ require (
 	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 )
 
 require (

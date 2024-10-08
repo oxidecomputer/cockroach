@@ -1058,33 +1058,6 @@ func init() {
 		}
 	}
 
-	// Multi-tenancy proxy command flags.
-	{
-		f := mtStartSQLProxyCmd.Flags()
-		stringFlag(f, &proxyContext.Denylist, cliflags.DenyList)
-		stringFlag(f, &proxyContext.ListenAddr, cliflags.ProxyListenAddr)
-		stringFlag(f, &proxyContext.ListenCert, cliflags.ListenCert)
-		stringFlag(f, &proxyContext.ListenKey, cliflags.ListenKey)
-		stringFlag(f, &proxyContext.MetricsAddress, cliflags.ListenMetrics)
-		stringFlag(f, &proxyContext.RoutingRule, cliflags.RoutingRule)
-		stringFlag(f, &proxyContext.DirectoryAddr, cliflags.DirectoryAddr)
-		boolFlag(f, &proxyContext.SkipVerify, cliflags.SkipVerify)
-		boolFlag(f, &proxyContext.Insecure, cliflags.InsecureBackend)
-		durationFlag(f, &proxyContext.ValidateAccessInterval, cliflags.ValidateAccessInterval)
-		durationFlag(f, &proxyContext.PollConfigInterval, cliflags.PollConfigInterval)
-		durationFlag(f, &proxyContext.ThrottleBaseDelay, cliflags.ThrottleBaseDelay)
-		boolFlag(f, &proxyContext.DisableConnectionRebalancing, cliflags.DisableConnectionRebalancing)
-	}
-
-	// Multi-tenancy test directory command flags.
-	{
-		f := mtTestDirectorySvr.Flags()
-		intFlag(f, &testDirectorySvrContext.port, cliflags.TestDirectoryListenPort)
-		stringFlag(f, &testDirectorySvrContext.certsDir, cliflags.TestDirectoryTenantCertsDir)
-		stringFlag(f, &testDirectorySvrContext.tenantBaseDir, cliflags.TestDirectoryTenantBaseDir)
-		stringFlag(f, &testDirectorySvrContext.kvAddrs, cliflags.KVAddrs)
-	}
-
 	// userfile upload command.
 	{
 		boolFlag(userFileUploadCmd.Flags(), &userfileCtx.recursive, cliflags.Recursive)

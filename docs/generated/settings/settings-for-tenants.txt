@@ -5,12 +5,6 @@ admission.epoch_lifo.epoch_duration	duration	100ms	the duration of an epoch, for
 admission.epoch_lifo.queue_delay_threshold_to_switch_to_lifo	duration	105ms	the queue delay encountered by a (tenant,priority) for switching to epoch-LIFO ordering
 admission.sql_kv_response.enabled	boolean	true	when true, work performed by the SQL layer when receiving a KV response is subject to admission control
 admission.sql_sql_response.enabled	boolean	true	when true, work performed by the SQL layer when receiving a DistSQL response is subject to admission control
-bulkio.backup.deprecated_full_backup_with_subdir.enabled	boolean	false	when true, a backup command with a user specified subdirectory will create a full backup at the subdirectory if no backup already exists at that subdirectory.
-bulkio.backup.file_size	byte size	128 MiB	target size for individual data files produced during BACKUP
-bulkio.backup.read_timeout	duration	5m0s	amount of time after which a read attempt is considered timed out, which causes the backup to fail
-bulkio.backup.read_with_priority_after	duration	1m0s	amount of time since the read-as-of time above which a BACKUP should use priority when retrying reads
-bulkio.stream_ingestion.minimum_flush_interval	duration	5s	the minimum timestamp between flushes; flushes may still occur if internal buffers fill up
-changefeed.node_throttle_config	string		specifies node level throttling configuration for all changefeeeds
 cloudstorage.azure.concurrent_upload_buffers	integer	1	controls the number of concurrent buffers that will be used by the Azure client when uploading chunks.Each buffer can buffer up to cloudstorage.write_chunk.size of memory during an upload
 cloudstorage.http.custom_ca	string		custom root CA (appended to system's default CAs) for verifying certificates when interacting with HTTPS storage
 cloudstorage.timeout	duration	10m0s	the timeout for import/export storage operations
@@ -19,14 +13,10 @@ cluster.preserve_downgrade_option	string		disable (automatic or manual) cluster 
 diagnostics.forced_sql_stat_reset.interval	duration	2h0m0s	interval after which the reported SQL Stats are reset even if not collected by telemetry reporter. It has a max value of 24H.
 diagnostics.reporting.enabled	boolean	true	enable reporting diagnostic metrics to cockroach labs
 diagnostics.reporting.interval	duration	1h0m0s	interval at which diagnostics data should be reported
-enterprise.license	string		the encoded cluster license
 external.graphite.endpoint	string		if nonempty, push server metrics to the Graphite or Carbon server at the specified host:port
 external.graphite.interval	duration	10s	the interval at which metrics are pushed to Graphite (if enabled)
-feature.backup.enabled	boolean	true	set to true to enable backups, false to disable; default is true
-feature.changefeed.enabled	boolean	true	set to true to enable changefeeds, false to disable; default is true
 feature.export.enabled	boolean	true	set to true to enable exports, false to disable; default is true
 feature.import.enabled	boolean	true	set to true to enable imports, false to disable; default is true
-feature.restore.enabled	boolean	true	set to true to enable restore, false to disable; default is true
 feature.schema_change.enabled	boolean	true	set to true to enable schema changes, false to disable; default is true
 feature.stats.enabled	boolean	true	set to true to enable CREATE STATISTICS/ANALYZE, false to disable; default is true
 jobs.retention_time	duration	336h0m0s	the amount of time to retain records for completed jobs before
@@ -43,7 +33,6 @@ kv.replication_reports.interval	duration	1m0s	the frequency for generating the r
 kv.transaction.max_intents_bytes	integer	4194304	maximum number of bytes used to track locks in transactions
 kv.transaction.max_refresh_spans_bytes	integer	256000	maximum number of bytes used to track refresh spans in serializable transactions
 kv.transaction.reject_over_max_intents_budget.enabled	boolean	false	if set, transactions that exceed their lock tracking budget (kv.transaction.max_intents_bytes) are rejected instead of having their lock spans imprecisely compressed
-schedules.backup.gc_protection.enabled	boolean	false	enable chaining of GC protection across backups run as part of a schedule; default is false
 security.ocsp.mode	enumeration	off	use OCSP to check whether TLS certificates are revoked. If the OCSP server is unreachable, in strict mode all certificates will be rejected and in lax mode all certificates will be accepted. [off = 0, lax = 1, strict = 2]
 security.ocsp.timeout	duration	3s	timeout before considering the OCSP server unreachable
 server.auth_log.sql_connections.enabled	boolean	false	if set, log SQL client connect and disconnect events (note: may hinder performance on loaded nodes)
@@ -58,16 +47,6 @@ server.host_based_authentication.configuration	string		host-based authentication
 server.hsts.enabled	boolean	false	if true, HSTS headers will be sent along with all HTTP requests. The headers will contain a max-age setting of one year. Browsers honoring the header will always use HTTPS to access the DB Console. Ensure that TLS is correctly configured prior to enabling.
 server.identity_map.configuration	string		system-identity to database-username mappings
 server.max_connections_per_gateway	integer	-1	the maximum number of non-superuser SQL connections per gateway allowed at a given time (note: this will only limit future connection attempts and will not affect already established connections). Negative values result in unlimited number of connections. Superusers are not affected by this limit.
-server.oidc_authentication.autologin	boolean	false	if true, logged-out visitors to the DB Console will be automatically redirected to the OIDC login endpoint
-server.oidc_authentication.button_text	string	Login with your OIDC provider	text to show on button on DB Console login page to login with your OIDC provider (only shown if OIDC is enabled)
-server.oidc_authentication.claim_json_key	string		sets JSON key of principal to extract from payload after OIDC authentication completes (usually email or sid)
-server.oidc_authentication.client_id	string		sets OIDC client id
-server.oidc_authentication.client_secret	string		sets OIDC client secret
-server.oidc_authentication.enabled	boolean	false	enables or disabled OIDC login for the DB Console
-server.oidc_authentication.principal_regex	string	(.+)	regular expression to apply to extracted principal (see claim_json_key setting) to translate to SQL user (golang regex format, must include 1 grouping to extract)
-server.oidc_authentication.provider_url	string		sets OIDC provider URL ({provider_url}/.well-known/openid-configuration must resolve)
-server.oidc_authentication.redirect_url	string	https://localhost:8080/oidc/v1/callback	sets OIDC redirect URL via a URL string or a JSON string containing a required `redirect_urls` key with an object that maps from region keys to URL strings (URLs should point to your load balancer and must route to the path /oidc/v1/callback) 
-server.oidc_authentication.scopes	string	openid	sets OIDC scopes to include with authentication request (space delimited list of strings, required to start with `openid`)
 server.rangelog.ttl	duration	720h0m0s	if nonzero, range log entries older than this duration are deleted every 10m0s. Should not be lowered below 24 hours.
 server.shutdown.connection_wait	duration	0s	the maximum amount of time a server waits for all SQL connections to be closed before proceeding with a drain. (note that the --drain-wait parameter for cockroach node drain may need adjustment after changing this setting)
 server.shutdown.drain_wait	duration	0s	the amount of time a server waits in an unready state before proceeding with a drain (note that the --drain-wait parameter for cockroach node drain may need adjustment after changing this setting. --drain-wait is to specify the duration of the whole draining process, while server.shutdown.drain_wait is to set the wait time for health probes to notice that the node is not ready.)

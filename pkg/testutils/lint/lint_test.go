@@ -192,15 +192,6 @@ func TestLint(t *testing.T) {
 // licenses/APL.txt.
 `)
 
-		cclHeader := regexp.MustCompile(`// Copyright 20\d\d The Cockroach Authors.
-//
-// Licensed as a CockroachDB Enterprise file under the Cockroach Community
-// License \(the "License"\); you may not use this file except in compliance with
-// the License. You may obtain a copy of the License at
-//
-//     https://github.com/cockroachdb/cockroach/blob/master/licenses/CCL.txt
-`)
-
 		// These extensions identify source files that should have copyright headers.
 		extensions := []string{
 			"*.go", "*.cc", "*.h", "*.js", "*.ts", "*.tsx", "*.s", "*.S", "*.styl", "*.proto", "*.rl",
@@ -239,10 +230,8 @@ func TestLint(t *testing.T) {
 			}
 			data = data[0:n]
 
-			isCCL := strings.Contains(filename, "ccl/")
-			if (isCCL && cclHeader.Find(data) == nil) ||
-				(!isCCL && aslHeader.Find(data) == nil && bslHeader.Find(data) == nil) {
-				t.Errorf("did not find expected license header (ccl=%v) in %s", isCCL, filename)
+			if aslHeader.Find(data) == nil && bslHeader.Find(data) == nil {
+				t.Errorf("did not find expected license header in %s", filename)
 			}
 		}); err != nil {
 			t.Fatal(err)

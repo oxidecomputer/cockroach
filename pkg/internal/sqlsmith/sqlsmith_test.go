@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
-	"github.com/cockroachdb/cockroach/pkg/ccl/utilccl"
 	"github.com/cockroachdb/cockroach/pkg/sql/parser"
 	"github.com/cockroachdb/cockroach/pkg/testutils/serverutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/sqlutils"
@@ -146,7 +145,6 @@ func TestRandTableInserts(t *testing.T) {
 func TestGenerateParse(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 	defer log.Scope(t).Close(t)
-	defer utilccl.TestingEnableEnterprise()()
 
 	ctx := context.Background()
 	s, sqlDB, _ := serverutils.StartServer(t, base.TestServerArgs{})
