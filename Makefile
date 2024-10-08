@@ -47,7 +47,6 @@ endif
 	@echo "GO_ENV_CC = $$(which $$($(GO) env CC))" >> $@.tmp
 	@echo "GO_ENV_CXX = $$(which $$($(GO) env CXX))" >> $@.tmp
 	@echo "GIT_DIR = $$(git rev-parse --git-dir 2>/dev/null)" >> $@.tmp
-	@echo "GITHOOKSDIR = $$(test -d .git && echo '.git/hooks' || git rev-parse --git-path hooks)" >> $@.tmp
 	@echo "have-defs = 1" >> $@.tmp
 	@set -e; \
 	if ! cmp -s $@.tmp $@; then \
@@ -342,19 +341,6 @@ vendor_rebuild: bin/.submodules-initialized
 .ALWAYS_REBUILD:
 .PHONY: .ALWAYS_REBUILD
 
-ifneq ($(GIT_DIR),)
-# If we're in a git worktree, the git hooks directory may not be in our root,
-# so we ask git for the location.
-#
-# Note that `git rev-parse --git-path hooks` requires git 2.5+.
-GITHOOKS := $(subst githooks/,$(GITHOOKSDIR)/,$(wildcard githooks/*))
-$(GITHOOKSDIR)/%: githooks/%
-	@echo installing $<
-	@rm -f $@
-	@mkdir -p $(dir $@)
-	@ln -s ../../$(basename $<) $(dir $@)
-endif
-
 
 CLUSTER_UI_JS := pkg/ui/cluster-ui/dist/main.js
 
@@ -379,7 +365,7 @@ vendor/modules.txt: | bin/.submodules-initialized
 # Update the git hooks and install commands from dependencies whenever they
 # change.
 # These should be synced with `./pkg/cmd/import-tools/main.go`.
-bin/.bootstrap: $(GITHOOKS) vendor/modules.txt | bin/.submodules-initialized
+bin/.bootstrap: vendor/modules.txt | bin/.submodules-initialized
 	@$(GO_INSTALL) -v \
 		github.com/client9/misspell/cmd/misspell \
 		github.com/cockroachdb/crlfmt \
