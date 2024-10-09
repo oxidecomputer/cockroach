@@ -177,6 +177,11 @@ func TestLint(t *testing.T) {
 	t.Run("TestCopyrightHeaders", func(t *testing.T) {
 		t.Parallel()
 
+		aslHeader := regexp.MustCompile(`(// Copyright 20\d\d .+\n)+//
+// Use of this software is governed by the Apache License, Version 2.0,
+// included in the file licenses/APL.txt.
+`)
+
 		bslHeader := regexp.MustCompile(`(// Copyright 20\d\d .+\n)+//
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
@@ -221,14 +226,6 @@ func TestLint(t *testing.T) {
 			stream.GrepNot(`geo/geographiclib/geodesic\.c$`),
 			stream.GrepNot(`geo/geographiclib/geodesic\.h$`),
 		), func(filename string) {
-			isCCL := strings.Contains(filename, "ccl/")
-			var expHeader *regexp.Regexp
-			if isCCL {
-				expHeader = cclHeader
-			} else {
-				expHeader = bslHeader
-			}
-
 			file, err := os.Open(filepath.Join(pkgDir, filename))
 			if err != nil {
 				t.Error(err)
@@ -242,7 +239,9 @@ func TestLint(t *testing.T) {
 			}
 			data = data[0:n]
 
-			if expHeader.Find(data) == nil {
+			isCCL := strings.Contains(filename, "ccl/")
+			if (isCCL && cclHeader.Find(data) == nil) ||
+				(!isCCL && aslHeader.Find(data) == nil && bslHeader.Find(data) == nil) {
 				t.Errorf("did not find expected license header (ccl=%v) in %s", isCCL, filename)
 			}
 		}); err != nil {

@@ -300,12 +300,6 @@ ifeq (, $(shell which bazel))
 $(info $(yellow)Warning: 'bazel' not found (`brew install bazelisk` for macs)$(term-reset))
 endif
 
-# Force vendor directory to rebuild.
-.PHONY: vendor_rebuild
-vendor_rebuild: bin/.submodules-initialized
-	$(GO_INSTALL) -v -mod=mod github.com/goware/modvendor
-	./build/vendor_rebuild.sh
-
 # Tell Make to delete the target if its recipe fails. Otherwise, if a recipe
 # modifies its target before failing, the target's timestamp will make it appear
 # up-to-date on the next invocation of Make, even though it is likely corrupt.
@@ -338,22 +332,27 @@ pkg/ui/yarn.installed: pkg/ui/package.json pkg/ui/yarn.lock | bin/.submodules-in
 	rm -rf pkg/ui/node_modules/@types/node
 	touch $@
 
-vendor/modules.txt: | bin/.submodules-initialized
+vendor/modules.txt: go.mod go.sum
+	$(GO) mod download
+	$(GO) mod vendor
+	$(GO_INSTALL) -v github.com/goware/modvendor
+	modvendor -copy="**/*.c **/*.h **/*.proto" -include 'github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/api,github.com/grpc-ecosystem/grpc-gateway/third_party/googleapis/google/rpc,github.com/prometheus/client_model'
 
 # Update the git hooks and install commands from dependencies whenever they
 # change.
 # These should be synced with `./pkg/cmd/import-tools/main.go`.
-bin/.bootstrap: vendor/modules.txt | bin/.submodules-initialized
+bin/.bootstrap: vendor/modules.txt
 	@$(GO_INSTALL) -v \
+		github.com/bufbuild/buf/cmd/buf \
 		github.com/client9/misspell/cmd/misspell \
 		github.com/cockroachdb/crlfmt \
 		github.com/cockroachdb/gostdlib/cmd/gofmt \
 		github.com/cockroachdb/gostdlib/x/tools/cmd/goimports \
-		github.com/golang/mock/mockgen \
 		github.com/cockroachdb/stress \
 		github.com/cockroachdb/tools/cmd/stringer \
-		github.com/goware/modvendor \
 		github.com/go-swagger/go-swagger/cmd/swagger \
+		github.com/golang/mock/mockgen \
+		github.com/goware/modvendor \
 		github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway \
 		github.com/kevinburke/go-bindata/go-bindata \
 		github.com/kisielk/errcheck \
@@ -365,8 +364,7 @@ bin/.bootstrap: vendor/modules.txt | bin/.submodules-initialized
 		golang.org/x/perf/cmd/benchstat \
 		golang.org/x/tools/cmd/goyacc \
 		golang.org/x/tools/go/analysis/passes/shadow/cmd/shadow \
-		honnef.co/go/tools/cmd/staticcheck \
-		github.com/bufbuild/buf/cmd/buf
+		honnef.co/go/tools/cmd/staticcheck
 	touch $@
 
 IGNORE_GOVERS :=
@@ -525,7 +523,7 @@ CGO_SUFFIXED_FLAGS_FILES   := $(addprefix ./,$(addsuffix /zcgo_flags_$(native-ta
 BASE_CGO_FLAGS_FILES := $(CGO_UNSUFFIXED_FLAGS_FILES) $(CGO_SUFFIXED_FLAGS_FILES)
 CGO_FLAGS_FILES := $(BASE_CGO_FLAGS_FILES) vendor/github.com/knz/go-libedit/unix/zcgo_flags_extra.go
 
-$(BASE_CGO_FLAGS_FILES): Makefile build/defs.mk.sig | bin/.submodules-initialized
+$(BASE_CGO_FLAGS_FILES): Makefile build/defs.mk.sig vendor/modules.txt
 	@echo "regenerating $@"
 	@echo '// GENERATED FILE DO NOT EDIT' > $@
 	@echo >> $@
@@ -538,7 +536,7 @@ $(BASE_CGO_FLAGS_FILES): Makefile build/defs.mk.sig | bin/.submodules-initialize
 	@echo '// #cgo LDFLAGS: $(addprefix -L,$(JEMALLOC_DIR)/lib $(LIBEDIT_DIR)/src/.libs $(KRB_DIR) $(PROJ_DIR)/lib)' >> $@
 	@echo 'import "C"' >> $@
 
-vendor/github.com/knz/go-libedit/unix/zcgo_flags_extra.go: Makefile | bin/.submodules-initialized
+vendor/github.com/knz/go-libedit/unix/zcgo_flags_extra.go: Makefile vendor/modules.txt
 	@echo "regenerating $@"
 	@echo '// GENERATED FILE DO NOT EDIT' > $@
 	@echo >> $@
@@ -1249,8 +1247,8 @@ UI_JS_OSS := pkg/ui/workspaces/db-console/src/js/protos.js
 UI_TS_OSS := pkg/ui/workspaces/db-console/src/js/protos.d.ts
 UI_PROTOS_OSS := $(UI_JS_OSS) $(UI_TS_OSS)
 
-$(GOGOPROTO_PROTO): bin/.submodules-initialized
-$(ERRORS_PROTO): bin/.submodules-initialized
+$(GOGOPROTO_PROTO): vendor/modules.txt
+$(ERRORS_PROTO): vendor/modules.txt
 
 bin/.go_protobuf_sources: $(GO_PROTOS) $(GOGOPROTO_PROTO) $(ERRORS_PROTO) bin/.bootstrap bin/protoc-gen-gogoroach c-deps/proto-rebuild
 	$(FIND_RELEVANT) -type f -name '*.pb.go' -exec rm {} +
@@ -1275,13 +1273,13 @@ bin/.gw_protobuf_sources: $(GW_SERVER_PROTOS) $(GW_TS_PROTOS) $(GO_PROTOS) $(GOG
 # typescript definitions for the proto files afterwards.
 
 .SECONDARY: $(UI_JS_CCL)
-$(UI_JS_CCL): $(GW_PROTOS) $(GO_PROTOS) $(JS_PROTOS_CCL) pkg/ui/yarn.installed | bin/.submodules-initialized
+$(UI_JS_CCL): $(GW_PROTOS) $(GO_PROTOS) $(JS_PROTOS_CCL) pkg/ui/yarn.installed vendor/modules.txt
 	# Add comment recognized by reviewable.
 	echo '// GENERATED FILE DO NOT EDIT' > $@
 	$(PBJS) -t static-module -w es6 --strict-long --no-create --no-convert --no-delimited --no-verify --keep-case --path pkg --path ./vendor/github.com --path $(GOGO_PROTOBUF_PATH) --path $(ERRORS_PATH) --path $(COREOS_PATH) --path $(PROMETHEUS_PATH) --path $(GRPC_GATEWAY_GOOGLEAPIS_PATH) $(filter %.proto,$(GW_PROTOS) $(JS_PROTOS_CCL)) >> $@
 
 .SECONDARY: $(UI_JS_OSS)
-$(UI_JS_OSS): $(GW_PROTOS) $(GO_PROTOS) pkg/ui/yarn.installed | bin/.submodules-initialized
+$(UI_JS_OSS): $(GW_PROTOS) $(GO_PROTOS) pkg/ui/yarn.installed vendor/modules.txt
 	# Add comment recognized by reviewable.
 	echo '// GENERATED FILE DO NOT EDIT' > $@
 	$(PBJS) -t static-module -w es6 --strict-long --no-create --no-convert --no-delimited --no-verify --keep-case --path pkg --path ./vendor/github.com --path $(GOGO_PROTOBUF_PATH) --path $(ERRORS_PATH) --path $(COREOS_PATH) --path $(PROMETHEUS_PATH) --path $(GRPC_GATEWAY_GOOGLEAPIS_PATH) $(filter %.proto,$(GW_PROTOS)) >> $@
@@ -1752,25 +1750,25 @@ $(has-build-info): override LINKFLAGS += \
 	-X "github.com/cockroachdb/cockroach/pkg/build.cgoTargetTriple=$(TARGET_TRIPLE)" \
 	$(if $(BUILDCHANNEL),-X "github.com/cockroachdb/cockroach/pkg/build.channel=$(BUILDCHANNEL)")
 
-$(bins): bin/%: bin/%.d | bin/prereqs bin/.submodules-initialized
+$(bins): bin/%: bin/%.d | bin/prereqs
 	@echo go install -v $*
 	$(PREREQS) $(if $($*-package),$($*-package),./pkg/cmd/$*) > $@.d.tmp
 	mv -f $@.d.tmp $@.d
 	$(GO_INSTALL) -ldflags '$(LINKFLAGS)' -v $(if $($*-package),$($*-package),./pkg/cmd/$*)
 
-$(xbins): bin/%: bin/%.d | bin/prereqs bin/.submodules-initialized
+$(xbins): bin/%: bin/%.d | bin/prereqs
 	@echo go build -v $(GOFLAGS) $(GOMODVENDORFLAGS) -tags '$(TAGS)' -ldflags '$(LINKFLAGS)' -o $@ $*
 	$(PREREQS) $(if $($*-package),$($*-package),./pkg/cmd/$*) > $@.d.tmp
 	mv -f $@.d.tmp $@.d
 	$(xgo) build -v $(GOFLAGS) $(GOMODVENDORFLAGS) -tags '$(TAGS)' -ldflags '$(LINKFLAGS)' -o $@ $(if $($*-package),$($*-package),./pkg/cmd/$*)
 
-$(testbins): bin/%: bin/%.d | bin/prereqs $(SUBMODULES_TARGET)
+$(testbins): bin/%: bin/%.d | bin/prereqs
 	@echo go test -c $($*-package)
 	$(PREREQS) -bin-name=$* -test $($*-package) > $@.d.tmp
 	mv -f $@.d.tmp $@.d
 	$(xgo) test $(GOTESTFLAGS) $(GOFLAGS) $(GOMODVENDORFLAGS) -tags '$(TAGS)' -ldflags '$(LINKFLAGS)' -c -o $@ $($*-package)
 
-bin/prereqs: ./pkg/cmd/prereqs/*.go | bin/.submodules-initialized
+bin/prereqs: ./pkg/cmd/prereqs/*.go vendor/modules.txt
 	@echo go install -v ./pkg/cmd/prereqs
 	@$(GO_INSTALL) -v ./pkg/cmd/prereqs
 
