@@ -1580,7 +1580,6 @@ bins = \
   bin/roachprod-stress \
   bin/roachtest \
   bin/skip-test \
-  bin/teamcity-trigger \
   bin/uptodate \
   bin/urlcheck \
   bin/whoownsit \

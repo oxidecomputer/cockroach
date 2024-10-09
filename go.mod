@@ -17,7 +17,6 @@ require (
 	github.com/PuerkitoBio/goquery v1.5.1
 	github.com/Shopify/toxiproxy v2.1.4+incompatible
 	github.com/VividCortex/ewma v1.1.1
-	github.com/abourget/teamcity v0.0.0-00010101000000-000000000000
 	github.com/alessio/shellescape v1.4.1
 	github.com/andy-kimball/arenaskl v0.0.0-20200617143215-f701008588b9
 	github.com/andygrunwald/go-jira v1.14.0
@@ -341,8 +340,6 @@ require (
 )
 
 replace github.com/olekukonko/tablewriter => github.com/cockroachdb/tablewriter v0.0.5-0.20200105123400-bd15540e8847
-
-replace github.com/abourget/teamcity => github.com/cockroachdb/teamcity v0.0.0-20180905144921-8ca25c33eb11
 
 replace vitess.io/vitess => github.com/cockroachdb/vitess v0.0.0-20210218160543-54524729cc82
 
