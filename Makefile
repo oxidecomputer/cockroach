@@ -235,28 +235,6 @@ GOMODVENDORFLAGS ?= -mod=vendor
 GOFLAGS ?=
 TAR     ?= tar
 
-# Ensure we have an unambiguous GOPATH.
-GOPATH := $(shell $(GO) env GOPATH)
-
-ifneq "$(or $(findstring :,$(GOPATH)),$(findstring ;,$(GOPATH)))" ""
-$(error GOPATHs with multiple entries are not supported)
-endif
-
-GOPATH := $(realpath $(GOPATH))
-ifeq "$(strip $(GOPATH))" ""
-$(error GOPATH is not set and could not be automatically determined)
-endif
-
-ifeq "$(filter $(GOPATH)%,$(CURDIR))" ""
-$(error Current directory "$(CURDIR)" is not within GOPATH "$(GOPATH)")
-endif
-
-ifeq "$(GOPATH)" "/"
-$(error GOPATH=/ is not supported)
-endif
-
-$(info GOPATH set to $(GOPATH))
-
 # We install our vendored tools to a directory within this repository to avoid
 # overwriting any user-installed binaries of the same name in the default GOBIN.
 GO_INSTALL := GOBIN='$(abspath bin)' GOFLAGS= $(GO) install
@@ -461,7 +439,7 @@ KRB5_SRC_DIR     := $(C_DEPS_DIR)/krb5
 # Derived build variants.
 use-stdmalloc          := $(findstring stdmalloc,$(TAGS))
 
-BUILD_DIR := $(GOPATH)/native/$(TARGET_TRIPLE)
+BUILD_DIR := $(CURDIR)/lib/build
 
 # In MinGW, cgo flags don't handle Unix-style paths, so convert our base path to
 # a Windows-style path.
@@ -741,7 +719,7 @@ export LC_ALL=C
 # Go binary. It is not intended to be perfect. Upgrading the compiler toolchain
 # in place will go unnoticed, for example. Similar problems exist in all Make-
 # based build systems and are not worth solving.
-build/defs.mk.sig: sig = $(PATH):$(CURDIR):$(GO):$(GOPATH):$(CC):$(CXX):$(TARGET_TRIPLE):$(BUILDTYPE):$(IGNORE_GOVERS)
+build/defs.mk.sig: sig = $(PATH):$(CURDIR):$(GO):$(CC):$(CXX):$(TARGET_TRIPLE):$(BUILDTYPE):$(IGNORE_GOVERS)
 build/defs.mk.sig: .ALWAYS_REBUILD
 	@echo '$(sig)' | cmp -s - $@ || echo '$(sig)' > $@
 

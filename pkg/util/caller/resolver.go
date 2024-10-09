@@ -1,4 +1,5 @@
 // Copyright 2015 The Cockroach Authors.
+// Copyright 2024 Oxide Computer Company
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
@@ -41,30 +42,19 @@ type CallResolver struct {
 
 var reStripNothing = regexp.MustCompile(`^$`)
 
-// findFileAndPackageRoot identifies separately the package path to
-// the crdb source tree relative to the package build root, and the
-// package build root. This information is needed to construct
-// defaultRE below.
+// findPackageRoot finds the root of the `github.com/cockroachdb/cockraoch`
+// package. (This is equivalent to the root of the Git repository.)
 //
 // For example:
 //
 //     /home/kena/src/go/src/github.com/cockroachdb/cockroach/pkg/util/caller
-//                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ crdb package path
-//     ^^^^^^^^^^^^^^^^^^^^^^ package build root
+//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ package root
 //
-// Within a Bazel sandbox:
-//
-//     github.com/cockroachdb/cockroach/pkg/util/caller
-//     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ crdb package path
-//     (there is no package build root in this case)
-//
-//
-// The first return value is false if the paths could not be
-// determined.
-func findFileAndPackageRoot() (ok bool, crdbPath string, srcRoot string) {
+// The first return value is false if the paths could not be determined.
+func findPackageRoot() (ok bool, pkgRoot string) {
 	pcs := make([]uintptr, 1)
 	if runtime.Callers(1, pcs[:]) < 1 {
-		return false, "", ""
+		return false, ""
 	}
 	frame, _ := runtime.CallersFrames(pcs).Next()
 
@@ -74,7 +64,12 @@ func findFileAndPackageRoot() (ok bool, crdbPath string, srcRoot string) {
 	//     github.com/cockroachdb/cockroach/pkg/util/caller.findFileAndPackageRoot
 	funcName := frame.Function
 
-	crdbPath = strings.TrimSuffix(funcName, ".findFileAndPackageRoot")
+	modulePath := strings.TrimSuffix(funcName, ".findPackageRoot")
+	innerPath := strings.TrimPrefix(modulePath, "github.com/cockroachdb/cockroach")
+	if innerPath == modulePath {
+		// `modulePath` does not start with "github.com/cockroachdb/cockroach".
+		return false, ""
+	}
 
 	// frame.File is the name of the file on the filesystem.
 	// For example:
@@ -83,25 +78,17 @@ func findFileAndPackageRoot() (ok bool, crdbPath string, srcRoot string) {
 	// (or, in a Bazel sandbox)
 	//   github.com/cockroachdb/cockroach/pkg/util/caller/resolver.go
 	//
-	// root is its immediate parent directory.
-	root := path.Dir(frame.File)
-
-	// if it is a forked repository, we need to normalize root
-	// For example:
-	//   /home/kena/src/go/src/github.com/kena/cockroach/pkg/util/caller/resolver.go
-	// should be
-	//   /home/kena/src/go/src/github.com/cockroachdb/cockroach/pkg/util/caller/resolver.gos
-	exp := regexp.MustCompile("github.com/([^/]+)/cockroach")
-	root = exp.ReplaceAllString(root, "github.com/cockroachdb/cockroach")
+	// srcRoot is its immediate parent directory.
+	srcRoot := path.Dir(frame.File)
 
 	// Coverage tests report back as `[...]/util/caller/_test/_obj_test`;
 	// strip back to this package's directory.
-	if !strings.HasSuffix(root, "/caller") {
+	if !strings.HasSuffix(srcRoot, "/caller") {
 		// This trims the last component.
-		root = path.Dir(root)
+		srcRoot = path.Dir(srcRoot)
 	}
 
-	if !strings.HasSuffix(root, "/caller") {
+	if !strings.HasSuffix(srcRoot, "/caller") {
 		// If we are not finding the current package in the path, this is
 		// indicative of a bug in this code; either:
 		//
@@ -109,76 +96,34 @@ func findFileAndPackageRoot() (ok bool, crdbPath string, srcRoot string) {
 		//   call above.
 		// - the package was renamed without updating the two HasSuffix calls
 		//   above.
-		panic(fmt.Sprintf("cannot find self package: expected .../caller, got %q", root))
+		panic(fmt.Sprintf("cannot find self package: expected .../caller, got %q", srcRoot))
 	}
 
-	if !strings.HasSuffix(root, crdbPath) {
-		// We require the logical package name to be included in the
-		// physical file name.
-		//
-		// Conceptually, this requirement could be violated if e.g. the
-		// filesystem used different path separators as the logical
-		// package paths.
-		//
-		// However, as of Go 1.16, the stack frame code normalizes
-		// paths to use the same delimiters.
-		// If this ever changes, we'll need to update this logic.
-		panic(fmt.Sprintf("cannot find crdb path (%q) inside file path (%q)", crdbPath, root))
+	pkgRoot = strings.TrimSuffix(srcRoot, innerPath)
+	if pkgRoot == srcRoot {
+		return false, ""
+	} else {
+		return true, pkgRoot
 	}
-
-	// The package build root is everything before the package path.
-	srcRoot = strings.TrimSuffix(root, crdbPath)
-
-	// For the crdb package root, rewind up to the `pkg` root
-	// and one up.
-	for {
-		if strings.HasSuffix(crdbPath, "/pkg") {
-			break
-		}
-		// Sanity check.
-		if crdbPath == "." {
-			// There was no "pkg" root.
-			panic(fmt.Sprintf("caller package is not located under pkg tree: %q", root))
-		}
-		crdbPath = path.Dir(crdbPath)
-	}
-	crdbPath = path.Dir(crdbPath) // Also trim /pkg.
-
-	// At this point we have simplified:
-	//
-	//     /home/kena/src/go/src/github.com/cockroachdb/cockroach/pkg/util/caller/resolver.go
-	//     crdbPath: "github.com/cockroachdb/cockroach"
-	//     srcRoot: "/home/kena/src/go/src/"
-	//
-	// Within a Bazel sandbox:
-	//
-	//     github.com/cockroachdb/cockroach/pkg/util/caller
-	//     crdbPath: "github.com/cockroachdb/cockroach"
-	//     srcRoot: ""
-	//
-	return true, crdbPath, srcRoot
 }
 
 // defaultRE strips as follows:
 //
-// - <fileroot><crdbroot>/(pkg/)?module/submodule/file.go
+// - <pkgroot>/(pkg/)?module/submodule/file.go
 //   -> module/submodule/file.go
 //
-// - <fileroot><crdbroot>/vendor/<otherpkg>/path/to/file
+// - <pkgroot>/vendor/<otherpkg>/path/to/file
 //   -> vendor/<otherpkg>/path/to/file
-//
-// - <fileroot><otherpkg>/path/to/file
-//   -> <otherpkg>/path/to/file
 //
 // It falls back to stripping nothing when it's unable to look up its
 // own location via runtime.Caller().
 var defaultRE = func() *regexp.Regexp {
-	ok, crdbRoot, fileRoot := findFileAndPackageRoot()
+	ok, pkgRoot := findPackageRoot()
 	if !ok {
 		return reStripNothing
 	}
 
-	pkgStrip := regexp.QuoteMeta(fileRoot) + "(?:" + regexp.QuoteMeta(crdbRoot) + "/)?(?:pkg/)?(.*)"
+	pkgStrip := regexp.QuoteMeta(pkgRoot) + "/(?:pkg/)?(.*)"
 	return regexp.MustCompile(pkgStrip)
 }()
 

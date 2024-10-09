@@ -1,4 +1,5 @@
 // Copyright 2016 The Cockroach Authors.
+// Copyright 2024 Oxide Computer Company
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
@@ -22,6 +23,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -107,11 +109,12 @@ func vetCmd(t *testing.T, dir, name string, args []string, filters []stream.Filt
 // parallelization, and which have reasonable memory consumption
 // should be marked with t.Parallel().
 func TestLint(t *testing.T) {
-	crdb, err := build.Import(cockroachDB, "", build.FindOnly)
-	if err != nil {
-		t.Fatal(err)
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller failed")
 	}
-	pkgDir := filepath.Join(crdb.Dir, "pkg")
+	root := filepath.Join(file, "../../../..")
+	pkgDir := filepath.Join(root, "pkg")
 
 	pkgVar, pkgSpecified := os.LookupEnv("PKG")
 
@@ -138,7 +141,7 @@ func TestLint(t *testing.T) {
 			}
 		}
 
-		cmd, stderr, filter, err := dirCmd(crdb.Dir,
+		cmd, stderr, filter, err := dirCmd(root,
 			"git", "grep", "-nE", fmt.Sprintf(`[^_a-zA-Z](%s)\(`, strings.Join(names, "|")),
 			"--", "pkg")
 		if err != nil {
@@ -174,8 +177,7 @@ func TestLint(t *testing.T) {
 	t.Run("TestCopyrightHeaders", func(t *testing.T) {
 		t.Parallel()
 
-		bslHeader := regexp.MustCompile(`// Copyright 20\d\d The Cockroach Authors.
-//
+		bslHeader := regexp.MustCompile(`(// Copyright 20\d\d .+\n)+//
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
 //
@@ -1533,7 +1535,7 @@ func TestLint(t *testing.T) {
 	t.Run("TestForbiddenImportsSQLShell", func(t *testing.T) {
 		t.Parallel()
 
-		cmd, stderr, filter, err := dirCmd(crdb.Dir, "go", "list", "-deps",
+		cmd, stderr, filter, err := dirCmd(root, "go", "list", "-deps",
 			filepath.Join(cockroachDB, "./pkg/cmd/cockroach-sql"))
 		if err != nil {
 			t.Fatal(err)
@@ -1591,7 +1593,7 @@ func TestLint(t *testing.T) {
 		}
 		// errcheck uses 2GB of ram (as of 2017-07-13), so don't parallelize it.
 		cmd, stderr, filter, err := dirCmd(
-			crdb.Dir,
+			root,
 			"errcheck",
 			"-exclude",
 			excludesPath,
@@ -1622,7 +1624,7 @@ func TestLint(t *testing.T) {
 		skip.UnderShort(t)
 		skip.UnderBazelWithIssue(t, 73391, "Going to migrate to nogo")
 		// returncheck uses 2GB of ram (as of 2017-07-13), so don't parallelize it.
-		cmd, stderr, filter, err := dirCmd(crdb.Dir, "returncheck", pkgScope)
+		cmd, stderr, filter, err := dirCmd(root, "returncheck", pkgScope)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1652,7 +1654,7 @@ func TestLint(t *testing.T) {
 		}
 
 		cmd, stderr, filter, err := dirCmd(
-			crdb.Dir,
+			root,
 			"staticcheck",
 			pkgScope)
 		if err != nil {
@@ -2168,7 +2170,7 @@ func TestLint(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to find %s: %s", vetTool, err)
 		}
-		vetCmd(t, crdb.Dir, "go",
+		vetCmd(t, root, "go",
 			[]string{"vet", "-vettool", vetToolPath, "-all", "-printf.funcs", printfuncs, pkgScope},
 			filters)
 
