@@ -29,7 +29,6 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/cockroach/pkg/build/bazel"
-	"github.com/cockroachdb/cockroach/pkg/internal/codeowners"
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/builtins"
 	"github.com/cockroachdb/cockroach/pkg/testutils"
 	_ "github.com/cockroachdb/cockroach/pkg/testutils/buildutil"
@@ -37,7 +36,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/ghemawat/stream"
 	"github.com/jordanlewis/gcassert"
-	"github.com/stretchr/testify/require"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -2162,13 +2160,5 @@ func TestLint(t *testing.T) {
 			[]string{"vet", "-vettool", vetToolPath, "-all", "-printf.funcs", printfuncs, pkgScope},
 			filters)
 
-	})
-
-	t.Run("CODEOWNERS", func(t *testing.T) {
-		co, err := codeowners.DefaultLoadCodeOwners()
-		require.NoError(t, err)
-		const verbose = false
-		repoRoot := filepath.Join("../../../")
-		codeowners.LintEverythingIsOwned(t, verbose, co, repoRoot, "pkg")
 	})
 }

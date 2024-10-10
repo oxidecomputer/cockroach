@@ -1564,8 +1564,6 @@ bins = \
   bin/fuzz \
   bin/generate-binary \
   bin/terraformgen \
-  bin/github-post \
-  bin/github-pull-request-make \
   bin/gossipsim \
   bin/langgen \
   bin/protoc-gen-gogoroach \
@@ -1582,7 +1580,6 @@ bins = \
   bin/skip-test \
   bin/uptodate \
   bin/urlcheck \
-  bin/whoownsit \
   bin/zerosum
 
 # `xbins` contains binaries that should be compiled for the target architecture
