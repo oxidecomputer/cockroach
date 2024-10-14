@@ -1569,6 +1569,10 @@ func TestLint(t *testing.T) {
 	// TODO(tamird): replace this with errcheck.NewChecker() when
 	// https://github.com/dominikh/go-tools/issues/57 is fixed.
 	t.Run("TestErrCheck", func(t *testing.T) {
+		// errcheck OOMs on an instance with 32 GB memory. that's a bit
+		// much to ask for.
+		skip.IgnoreLint(t, "errcheck uses too much memory")
+
 		skip.UnderShort(t)
 		if bazel.BuiltWithBazel() {
 			skip.IgnoreLint(t, "the errcheck tests are run during the bazel build")
