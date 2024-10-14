@@ -1,4 +1,5 @@
 // Copyright 2015 The Cockroach Authors.
+// Copyright 2024 Oxide Computer Company
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
@@ -2865,17 +2866,14 @@ func (d *DTimestampTZ) Format(ctx *FmtCtx) {
 	if !bareStrings {
 		ctx.WriteByte('\'')
 	}
-	ctx.WriteString(d.Time.Format(timestampTZOutputFormat))
 	_, offsetSecs := d.Time.Zone()
 	// Only output remaining seconds offsets if it is available.
 	// This is to maintain backward compatibility with older CRDB versions,
 	// where we only output HH:MM.
 	if secondOffset := offsetSecs % 60; secondOffset != 0 {
-		if secondOffset < 0 {
-			secondOffset = 60 + secondOffset
-		}
-		ctx.WriteByte(':')
-		ctx.WriteString(fmt.Sprintf("%02d", secondOffset))
+		ctx.WriteString(d.Time.Format(timeutil.FullTimeFormat))
+	} else {
+		ctx.WriteString(d.Time.Format(timestampTZOutputFormat))
 	}
 	if !bareStrings {
 		ctx.WriteByte('\'')

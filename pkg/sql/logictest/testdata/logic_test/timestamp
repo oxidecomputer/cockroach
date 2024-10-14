@@ -275,7 +275,7 @@ SET TIME ZONE 'America/Chicago'
 query T
 SELECT '1882-05-23T00:00:00-05:51'::timestamptz::text
 ----
-1882-05-23 00:00:24-05:50:24
+1882-05-23 00:00:24-05:50:36
 
 query B
 SELECT '2011-03-13'::date = '2011-03-13'::timestamp
