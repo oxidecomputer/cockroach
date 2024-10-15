@@ -270,12 +270,15 @@ true
 subtest regression_django-cockroachdb_120
 
 statement ok
-SET TIME ZONE 'America/Chicago'
+SET TIME ZONE 'America/Halifax'
 
 query T
-SELECT '1882-05-23T00:00:00-05:51'::timestamptz::text
+SELECT '1882-05-23T00:00:00-04:15'::timestamptz::text
 ----
-1882-05-23 00:00:24-05:50:36
+1882-05-23 00:00:36-04:14:24
+
+statement ok
+SET TIME ZONE 'America/Chicago'
 
 query B
 SELECT '2011-03-13'::date = '2011-03-13'::timestamp
