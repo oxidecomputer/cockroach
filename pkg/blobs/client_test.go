@@ -19,6 +19,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -419,6 +420,12 @@ func TestBlobClientDeleteFrom(t *testing.T) {
 	writeTestFile(t, filepath.Join(remoteExternalDir, "test/remote.csv"), remoteFileContent)
 	writeTestFile(t, filepath.Join(remoteExternalDir, "test/remote2.csv"), remoteFileContent)
 
+	dirNotEmpty := "directory not empty"
+	// rmdir on a non-empty file returns EEXIST on illumos...
+	if runtime.GOOS == "illumos" {
+		dirNotEmpty = "file exists"
+	}
+
 	for _, tc := range []struct {
 		name     string
 		nodeID   roachpb.NodeID
@@ -447,7 +454,7 @@ func TestBlobClientDeleteFrom(t *testing.T) {
 			"delete-directory-not-empty",
 			remoteNodeID,
 			"test",
-			"directory not empty",
+			dirNotEmpty,
 		},
 		{
 			"delete-directory-empty", // this should work
