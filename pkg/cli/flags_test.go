@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -143,6 +144,10 @@ func TestClusterNameFlag(t *testing.T) {
 func TestMemoryPoolFlagValues(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 	defer log.Scope(t).Close(t)
+
+	if runtime.GOOS == "illumos" {
+		skip.IgnoreLint(t, "not implemented on illumos")
+	}
 
 	for _, tc := range []struct {
 		flag   string

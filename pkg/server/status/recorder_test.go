@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"os"
 	"reflect"
+	"runtime"
 	"sort"
 	"strconv"
 	"sync"
@@ -25,6 +26,7 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/server/status/statuspb"
 	"github.com/cockroachdb/cockroach/pkg/settings/cluster"
+	"github.com/cockroachdb/cockroach/pkg/testutils/skip"
 	"github.com/cockroachdb/cockroach/pkg/ts/tspb"
 	"github.com/cockroachdb/cockroach/pkg/util/hlc"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
@@ -102,6 +104,10 @@ func (fs fakeStore) Registry() *metric.Registry {
 // Summaries.
 func TestMetricsRecorder(t *testing.T) {
 	defer leaktest.AfterTest(t)()
+
+	if runtime.GOOS == "illumos" {
+		skip.IgnoreLint(t, "metrics recorder gets total system memory which is not implemented on illumos")
+	}
 
 	// ========================================
 	// Construct a series of fake descriptors for use in test.
