@@ -134,7 +134,6 @@ module.exports = (env, argv) => {
       new WebpackBar({
         name: "cluster-ui",
         color: "cyan",
-        reporters: [ env.WEBPACK_WATCH ? "basic" : "fancy" ],
         profile: true,
       }),
       new MomentLocalesPlugin(),

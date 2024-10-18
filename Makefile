@@ -43,6 +43,7 @@ endif
 	@echo "GOEXE = $$($(xgo) env GOEXE)" >> $@.tmp
 	@echo "NCPUS = $$({ getconf _NPROCESSORS_ONLN || sysctl -n hw.ncpu || nproc; } 2>/dev/null)" >> $@.tmp
 	@echo "UNAME = $$(uname)" >> $@.tmp
+	@echo "UNAME_O = $$(uname -o)" >> $@.tmp
 	@echo "HOST_TRIPLE = $$($$($(GO) env CC) -dumpmachine)" >> $@.tmp
 	@echo "GO_ENV_CC = $$(which $$($(GO) env CC))" >> $@.tmp
 	@echo "GO_ENV_CXX = $$(which $$($(GO) env CXX))" >> $@.tmp
@@ -162,7 +163,7 @@ DESTDIR :=
 
 DUPLFLAGS    := -t 100
 GOFLAGS      :=
-TAGS         := stdmalloc
+TAGS         := $(if $(findstring SunOS,$(UNAME)),$(if $(findstring illumos,$(UNAME_O)),stdmalloc))
 ARCHIVE      := cockroach.src.tgz
 STARTFLAGS   := -s type=mem,size=1GiB --logtostderr
 BUILDTARGET  := ./pkg/cmd/cockroach
@@ -1052,6 +1053,15 @@ protobuf: ## Regenerate generated code for protobuf definitions.
 pre-push: ## Run generate, lint, and test.
 pre-push: generate lint test ui-lint ui-test
 	! git status --porcelain | read || (git status; git --no-pager diff -a 1>&2; exit 1)
+
+cockroach.tgz: ## Build a binary tarball.
+cockroach.tgz: $(COCKROACHOSS) $(LIBGEOS)
+	rm -rf artifacts/cockroach
+	mkdir -p artifacts/cockroach/lib
+	ln $(COCKROACHOSS) artifacts/cockroach/cockroach
+	ln $(DYN_LIB_DIR)/libgeos.$(DYN_EXT) $(DYN_LIB_DIR)/libgeos_c.$(DYN_EXT) artifacts/cockroach/lib/
+	tar -cvf - -C artifacts cockroach | gzip -9 > $@
+	sha256sum $@ | awk '{ print $$1 }' > $@.sha256
 
 # archive builds a source tarball out of this repository. Files in the special
 # directory build/archive/contents are inserted directly into $(ARCHIVE_BASE).

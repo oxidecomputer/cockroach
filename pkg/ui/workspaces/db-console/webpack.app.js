@@ -66,7 +66,6 @@ module.exports = (env, argv) => {
     new WebpackBar({
       name: "db-console",
       color: "orange",
-      reporters: [ (env.WEBPACK_WATCH || env.WEBPACK_SERVE) ? "basic" : "fancy" ],
       profile: true,
     }),
   ];
