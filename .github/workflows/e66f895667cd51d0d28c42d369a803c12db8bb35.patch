@@ -1,0 +1,52 @@
+From e66f895667cd51d0d28c42d369a803c12db8bb35 Mon Sep 17 00:00:00 2001
+From: Alex Brachet <abrachet@google.com>
+Date: Thu, 19 May 2022 16:58:46 +0000
+Subject: [PATCH] cmd/cgo: allow DW_TAG_variable's with no name
+
+https://reviews.llvm.org/D123534 is emitting DW_TAG_variable's
+that don't have a DW_AT_name. This is allowed in the DWARF
+standard. It is adding DIE's for string literals for better
+symbolization on buffer overlows etc on these strings. They
+no associated name because they are not user provided variables.
+
+Fixes #53000
+
+Change-Id: I2cf063160508687067c7672cef0517bccd707d7b
+Reviewed-on: https://go-review.googlesource.com/c/go/+/406816
+TryBot-Result: Gopher Robot <gobot@golang.org>
+Run-TryBot: Ian Lance Taylor <iant@google.com>
+Auto-Submit: Ian Lance Taylor <iant@google.com>
+Reviewed-by: Ian Lance Taylor <iant@google.com>
+---
+ src/cmd/cgo/gcc.go | 17 ++++++++++++++++-
+ 1 file changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/src/cmd/cgo/gcc.go b/src/cmd/cgo/gcc.go
+index 855309edfa255..4d1a5bd8de1f3 100644
+--- a/src/cmd/cgo/gcc.go
++++ b/src/cmd/cgo/gcc.go
+@@ -576,8 +576,23 @@ func (p *Package) loadDWARF(f *File, conv *typeConv, names []*Name) {
+ 		switch e.Tag {
+ 		case dwarf.TagVariable:
+ 			name, _ := e.Val(dwarf.AttrName).(string)
++			// As of https://reviews.llvm.org/D123534, clang
++			// now emits DW_TAG_variable DIEs that have
++			// no name (so as to be able to describe the
++			// type and source locations of constant strings
++			// like the second arg in the call below:
++			//
++			//     myfunction(42, "foo")
++			//
++			// If a var has no name we won't see attempts to
++			// refer to it via "C.<name>", so skip these vars
++			//
++			// See issue 53000 for more context.
++			if name == "" {
++				break
++			}
+ 			typOff, _ := e.Val(dwarf.AttrType).(dwarf.Offset)
+-			if name == "" || typOff == 0 {
++			if typOff == 0 {
+ 				if e.Val(dwarf.AttrSpecification) != nil {
+ 					// Since we are reading all the DWARF,
+ 					// assume we will see the variable elsewhere.

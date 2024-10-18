@@ -1,0 +1,30 @@
+name: build-macos
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }} # to match buildomat behavior
+      - name: Toolchain setup
+        run: |
+          set -o xtrace
+          source .github/workflows/macos-setup.sh
+          echo "PATH=$PATH" >>"$GITHUB_ENV"
+      - name: Build
+        run: gmake -j`sysctl -n hw.ncpu` cockroach.tgz BUILDTYPE=release
+        env:
+          BROWSERSLIST_IGNORE_OLD_DATA: 1
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: build
+          path: |
+            cockroach.tgz
+            cockroach.tgz.sha256
+          if-no-files-found: error
+          compression-level: 0
