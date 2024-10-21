@@ -42,7 +42,7 @@ jobs:
             lib/libgeos_c.dylib
           if-no-files-found: error
 
-  build:
+  build-macos:
     needs: build-arch
     runs-on: macos-14
     steps:
