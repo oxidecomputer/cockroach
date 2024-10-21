@@ -2,7 +2,7 @@ This is Oxide's long-term maintenance branch/fork of [CockroachDB 22.1](https://
 
 Oxide uses CockroachDB for control plane data storage on the Oxide Cloud Computer, which uses [illumos](https://illumos.org) (specifically [Helios](https://github.com/oxidecomputer/helios)) as the underlying operating system. We launched our product with CockroachDB 22.1. After Cockroach Labs' announcement that they will change to a strictly proprietary (source-available) model, we made the decision to continue self-supporting on this BSL-licensed version for the foreseeable future. For more context, see [RFD 110](https://rfd.shared.oxide.computer/rfd/110) and [RFD 508](https://rfd.shared.oxide.computer/rfd/508).
 
-The primary goal of this branch is to keep the wheels of building and testing CockroachDB rolling smoothly to enable our ability to self-support. Our product runs illumos, but we also support development of our product on Linux and macOS, so it's important to us that our bug fixes that go into the illumos build also end up on developer machines too. Currently we have illumos and Linux builds going as well as Linux tests; we're working on CI parity for illumos and macOS.
+The primary goal of this branch is to keep the wheels of building and testing CockroachDB rolling smoothly to enable our ability to self-support. Our product runs illumos, but we also support development of our product on Linux and macOS, so it's important to us that our bug fixes that go into the illumos build also end up on developer machines too. CI produces builds and runs tests for all these platforms.
 
 You're welcome to use this branch under [the same terms we are](./licenses/BSL.txt), but note that we're unable to provide any support outside the context of its use in our product.
 
