@@ -1,0 +1,23 @@
+name: test-macos
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test-macos:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }} # to match buildomat behavior
+      - name: Toolchain setup
+        run: |
+          set -o xtrace
+          source .github/workflows/macos-setup.sh
+          echo "PATH=$PATH" >>"$GITHUB_ENV"
+      - name: Build
+        run: gmake -j`sysctl -n hw.ncpu` test
+        env:
+          BROWSERSLIST_IGNORE_OLD_DATA: 1
+
