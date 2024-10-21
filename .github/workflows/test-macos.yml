@@ -16,7 +16,7 @@ jobs:
           set -o xtrace
           source .github/workflows/macos-setup.sh
           echo "PATH=$PATH" >>"$GITHUB_ENV"
-      - name: Build
+      - name: Test
         run: gmake -j`sysctl -n hw.ncpu` test
         env:
           BROWSERSLIST_IGNORE_OLD_DATA: 1
