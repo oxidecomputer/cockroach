@@ -11,6 +11,7 @@ jobs:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           ref: ${{ github.event.pull_request.head.sha }} # to match buildomat behavior
+          fetch-depth: 0 # to fetch tags
       - name: Toolchain setup
         run: |
           set -o xtrace
