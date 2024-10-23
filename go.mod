@@ -96,7 +96,7 @@ require (
 	github.com/kevinburke/go-bindata v3.13.0+incompatible
 	github.com/kisielk/errcheck v1.6.1-0.20210625163953-8ddee489636a
 	github.com/kisielk/gotool v1.0.0
-	github.com/knz/go-libedit v1.10.1
+	github.com/knz/go-libedit v1.10.2-0.20230308122845-657a11e944a9
 	github.com/knz/strtime v0.0.0-20200318182718-be999391ffa9
 	github.com/kr/pretty v0.3.0
 	github.com/kr/text v0.2.0
@@ -343,8 +343,6 @@ replace github.com/olekukonko/tablewriter => github.com/cockroachdb/tablewriter 
 replace vitess.io/vitess => github.com/cockroachdb/vitess v0.0.0-20210218160543-54524729cc82
 
 replace gopkg.in/yaml.v2 => github.com/cockroachdb/yaml v0.0.0-20210825132133-2d6955c8edbc
-
-replace github.com/knz/go-libedit => github.com/otan-cockroach/go-libedit v1.10.2-0.20201030151939-7cced08450e7
 
 // At the time of writing (i.e. as of this version below) the `etcd` repo is in the process of properly introducing
 // modules, and as part of that uses an unsatisfiable version for this dependency (v3.0.0-00010101000000-000000000000).

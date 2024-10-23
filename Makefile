@@ -518,7 +518,6 @@ vendor/github.com/knz/go-libedit/unix/zcgo_flags_extra.go: Makefile vendor/modul
 	@echo >> $@
 	@echo 'package $($(@D)-package)' >> $@
 	@echo >> $@
-	@echo '// #cgo CPPFLAGS: -DGO_LIBEDIT_NO_BUILD' >> $@
 	@echo '// #cgo !windows LDFLAGS: -ledit -lncurses' >> $@
 	@echo 'import "C"' >> $@
 
