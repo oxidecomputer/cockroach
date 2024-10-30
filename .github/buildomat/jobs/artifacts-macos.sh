@@ -17,6 +17,16 @@
 #: series = "darwin-amd64"
 #: name = "cockroach.tgz.sha256"
 #: from_output = "/work/oxidecomputer/cockroach/cockroach.tgz.sha256"
+#:
+#: [[publish]]
+#: series = "darwin-arm64"
+#: name = "cockroach.tgz"
+#: from_output = "/work/oxidecomputer/cockroach/cockroach.tgz"
+#:
+#: [[publish]]
+#: series = "darwin-arm64"
+#: name = "cockroach.tgz.sha256"
+#: from_output = "/work/oxidecomputer/cockroach/cockroach.tgz.sha256"
 
 set -o errexit
 set -o pipefail

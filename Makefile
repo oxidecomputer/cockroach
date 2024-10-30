@@ -617,9 +617,9 @@ endif
 GEOS_NATIVE_LIB_DIR = $(GEOS_DIR)/$(if $(target-is-windows),bin,lib)
 ifdef geos_require_install_name_tool
 $(LIBGEOS): libgeos_inner .ALWAYS_REBUILD
-	$(TARGET_TRIPLE)-install_name_tool -id @rpath/libgeos.3.8.1.dylib lib/libgeos.dylib
-	$(TARGET_TRIPLE)-install_name_tool -id @rpath/libgeos_c.1.dylib lib/libgeos_c.dylib
-	$(TARGET_TRIPLE)-install_name_tool -change "$(GEOS_NATIVE_LIB_DIR)/libgeos.3.8.1.dylib" "@rpath/libgeos.3.8.1.dylib" lib.docker_amd64/libgeos_c.dylib
+	install_name_tool -id @rpath/libgeos.3.8.1.dylib lib/libgeos.dylib
+	install_name_tool -id @rpath/libgeos_c.1.dylib lib/libgeos_c.dylib
+	install_name_tool -change "$(GEOS_NATIVE_LIB_DIR)/libgeos.3.8.1.dylib" "@rpath/libgeos.3.8.1.dylib" lib/libgeos_c.dylib
 else ifdef geos_require_patchelf
 # We apply a similar fix for linux, allowing one to dlopen libgeos_c.so without
 # dlopening libgeos.so. Setting the rpath in the CMakeLists.txt does not work

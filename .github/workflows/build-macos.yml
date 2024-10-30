@@ -5,8 +5,18 @@ on:
   pull_request:
 
 jobs:
-  build:
-    runs-on: macos-13
+  build-arch:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - arch: amd64
+            makeargs: >-
+              XGOOS=darwin XGOARCH=amd64 TARGET_TRIPLE=x86_64-apple-darwin19 XCC=cc XCXX=c++
+              EXTRA_XCMAKE_FLAGS=-DCMAKE_OSX_ARCHITECTURES=x86_64
+              EXTRA_XCONFIGURE_FLAGS="CFLAGS='-arch x86_64'"
+          - arch: arm64
+    runs-on: macos-14
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
@@ -18,9 +28,36 @@ jobs:
           source .github/workflows/macos-setup.sh
           echo "PATH=$PATH" >>"$GITHUB_ENV"
       - name: Build
-        run: gmake -j`sysctl -n hw.ncpu` cockroach.tgz BUILDTYPE=release
+        run: gmake -j`sysctl -n hw.ncpu` cockroachoss BUILDTYPE=release ${{ matrix.arch.makeargs }}
         env:
           BROWSERSLIST_IGNORE_OLD_DATA: 1
+          CGO_ENABLED: 1
+          MACOSX_DEPLOYMENT_TARGET: 13
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: ${{ matrix.arch.arch }}
+          path: |
+            cockroachoss
+            lib/libgeos.dylib
+            lib/libgeos_c.dylib
+          if-no-files-found: error
+
+  build:
+    needs: build-arch
+    runs-on: macos-14
+    steps:
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+      - name: Create universal binaries
+        run: |
+          set -o pipefail
+          set -o xtrace
+          mkdir -p artifacts/cockroach/lib
+          lipo -create -output artifacts/cockroach/cockroach {amd64,arm64}/cockroachoss
+          lipo -create -output artifacts/cockroach/lib/libgeos.dylib {amd64,arm64}/lib/libgeos.dylib
+          lipo -create -output artifacts/cockroach/lib/libgeos_c.dylib {amd64,arm64}/lib/libgeos_c.dylib
+          chmod a+x artifacts/cockroach/{cockroach,lib/*.dylib}
+          tar -cvf - -C artifacts cockroach | gzip -9 > cockroach.tgz
+          shasum -a 256 cockroach.tgz | awk '{ print $1 }' > cockroach.tgz.sha256
       - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: build
