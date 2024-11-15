@@ -1,7 +1,7 @@
 source .github/buildomat/versions.sh
 
 pfexec pkg install \
-    /developer/build-essential /ooce/developer/cmake /ooce/developer/go-117 /ooce/runtime/node-16
+    /developer/build-essential /ooce/developer/cmake /ooce/developer/go-122@1.22.6 /ooce/runtime/node-16
 
 pushd /work
 mkdir bin

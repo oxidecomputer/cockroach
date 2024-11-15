@@ -1,4 +1,5 @@
 // Copyright 2021 The Cockroach Authors.
+// Copyright 2024 Oxide Computer Company
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
@@ -8,12 +9,12 @@
 // by the Apache License, Version 2.0, included in the file
 // licenses/APL.txt.
 //
-// The structure definitions in this file have been cross-checked against go1.19.
+// The structure definitions in this file have been cross-checked against go1.22.
 // Before allowing newer versions, please check that the structures
 // still match with those in go/src/runtime.
 
-//go:build gc && go1.19 && !go1.20
-// +build gc,go1.19,!go1.20
+//go:build gc && go1.22
+// +build gc,go1.22
 
 package goschedstats
 
@@ -73,6 +74,9 @@ type p struct {
 	// unit and eliminates the (potentially large) scheduling
 	// latency that otherwise arises from adding the ready'd
 	// goroutines to the end of the run queue.
+	//
+	// Note that while other P's may atomically CAS this to zero,
+	// only the owner P can CAS it to a valid G.
 	runnext guintptr
 
 	// The rest of the fields aren't important.
@@ -93,10 +97,9 @@ type gQueue struct {
 }
 
 type schedt struct {
-	// accessed atomically. keep at top to ensure alignment on 32-bit systems.
-	goidgen   uint64
-	lastpoll  uint64 // time of last network poll, 0 if currently polling
-	pollUntil uint64 // time to which current poll is sleeping
+	goidgen   atomic.Uint64
+	lastpoll  atomic.Int64 // time of last network poll, 0 if currently polling
+	pollUntil atomic.Int64 // time to which current poll is sleeping
 
 	lock mutex
 
@@ -111,11 +114,12 @@ type schedt struct {
 	nmsys        int32    // number of system m's not counted for deadlock
 	nmfreed      int64    // cumulative number of freed m's
 
-	ngsys uint32 // number of system goroutines; updated atomically
+	ngsys atomic.Int32 // number of system goroutines
 
-	pidle      puintptr // idle p's
-	npidle     uint32
-	nmspinning uint32 // See "Worker thread parking/unparking" comment in proc.go.
+	pidle        puintptr // idle p's
+	npidle       atomic.Int32
+	nmspinning   atomic.Int32  // See "Worker thread parking/unparking" comment in proc.go.
+	needspinning atomic.Uint32 // See "Delicate dance" comment in proc.go. Boolean. Must hold sched.lock to set to 1.
 
 	// Global runnable queue.
 	runq     gQueue
