@@ -105,7 +105,7 @@ func TestRotateCerts(t *testing.T) {
 
 	// Some errors codes.
 	const kBadAuthority = "certificate signed by unknown authority"
-	const kBadCertificate = "tls: bad certificate"
+	const kBadCertificate = "tls: unknown certificate authority"
 
 	// Test client with the same certs.
 	clientContext := testutils.NewNodeTestBaseContext()

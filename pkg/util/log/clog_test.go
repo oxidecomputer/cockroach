@@ -572,15 +572,15 @@ func TestFatalStacktraceStderr(t *testing.T) {
 			}
 			switch traceback {
 			case tracebackNone:
-				if strings.Count(cont, "goroutine ") > 0 {
+				if strings.Count(cont, "!goroutine ") > 0 {
 					t.Fatalf("unexpected stack trace:\n%s", cont)
 				}
 			case tracebackSingle:
-				if strings.Count(cont, "goroutine ") != 1 {
+				if strings.Count(cont, "!goroutine ") != 1 {
 					t.Fatalf("stack trace contains too many goroutines: %s", cont)
 				}
 			case tracebackAll:
-				if strings.Count(cont, "goroutine ") < 2 {
+				if strings.Count(cont, "!goroutine ") < 2 {
 					t.Fatalf("stack trace contains less than two goroutines: %s", cont)
 				}
 			}

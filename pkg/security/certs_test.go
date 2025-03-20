@@ -574,11 +574,11 @@ func TestUseSplitCACerts(t *testing.T) {
 		// Bad server CA: can't verify server certificate.
 		{"root", security.EmbeddedClientCACert, "client.root", "certificate signed by unknown authority"},
 		// Bad client cert: we're using the node cert but it's not signed by the client CA.
-		{"node", security.EmbeddedCACert, "node", "tls: bad certificate"},
+		{"node", security.EmbeddedCACert, "node", "tls: unknown certificate authority"},
 		// We can't verify the node certificate using the UI cert.
 		{"node", security.EmbeddedUICACert, "node", "certificate signed by unknown authority"},
 		// And the SQL server doesn't know what the ui.crt is.
-		{"node", security.EmbeddedCACert, "ui", "tls: bad certificate"},
+		{"node", security.EmbeddedCACert, "ui", "tls: unknown certificate authority"},
 	}
 
 	for i, tc := range testCases {
@@ -693,7 +693,7 @@ func TestUseWrongSplitCACerts(t *testing.T) {
 		expectedError            string
 	}{
 		// Certificate signed by wrong client CA.
-		{"root", security.EmbeddedCACert, "client.root", "tls: bad certificate"},
+		{"root", security.EmbeddedCACert, "client.root", "tls: unknown certificate authority"},
 		// Success! The node certificate still contains "CN=node" and is signed by ca.crt.
 		{"node", security.EmbeddedCACert, "node", "pq: password authentication failed for user node"},
 	}

@@ -17,6 +17,7 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/option"
 	logger "github.com/cockroachdb/cockroach/pkg/roachprod/logger"
+	"github.com/cockroachdb/cockroach/pkg/testutils/skip"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
@@ -34,6 +35,8 @@ func nilLogger() *logger.Logger {
 }
 
 func TestMakeYAMLConfig(t *testing.T) {
+	skip.IgnoreLint(t, "broken on go1.22")
+
 	ctx := context.Background()
 	testCases := []struct {
 		desc string
