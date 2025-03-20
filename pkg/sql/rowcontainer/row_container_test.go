@@ -28,10 +28,12 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/cockroachdb/cockroach/pkg/sql/types"
 	"github.com/cockroachdb/cockroach/pkg/storage"
+	"github.com/cockroachdb/cockroach/pkg/util/cancelchecker"
 	"github.com/cockroachdb/cockroach/pkg/util/encoding"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
 	"github.com/cockroachdb/cockroach/pkg/util/mon"
 	"github.com/cockroachdb/cockroach/pkg/util/randutil"
+	utilsort "github.com/cockroachdb/cockroach/pkg/util/sort"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
@@ -572,7 +574,7 @@ func TestDiskBackedIndexedRowContainer(t *testing.T) {
 			}
 
 			sorter := rowsSorter{evalCtx: &evalCtx, rows: sortedRows, ordering: ordering}
-			sort.Sort(&sorter)
+			utilSort(&sorter, ctx)
 			if sorter.err != nil {
 				t.Fatal(sorter.err)
 			}
@@ -667,7 +669,7 @@ func TestDiskBackedIndexedRowContainer(t *testing.T) {
 			defer diskMonitor.Stop(ctx)
 
 			sorter := rowsSorter{evalCtx: &evalCtx, rows: sortedRows, ordering: ordering}
-			sort.Sort(&sorter)
+			utilSort(&sorter, ctx)
 			if sorter.err != nil {
 				t.Fatal(sorter.err)
 			}
@@ -808,6 +810,17 @@ func TestDiskBackedIndexedRowContainer(t *testing.T) {
 			}()
 		}
 	})
+}
+
+// Rows are sorted using an in-tree sort implementation that is the Go standard
+// library's sort with cancellation checking added. Go 1.19 introduced a new
+// sort algorithm which is also an unstable sort, but in a different way. It seems
+// like a bad choice to change the sorting algorithm in v22.1.x, so we instead
+// make the test use the same in-tree sort implementation.
+func utilSort(data sort.Interface, ctx context.Context) {
+	var cancelChecker cancelchecker.CancelChecker
+	cancelChecker.Reset(ctx)
+	utilsort.Sort(data, &cancelChecker)
 }
 
 // indexedRows are rows with the corresponding indices.
