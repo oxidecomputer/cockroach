@@ -17,6 +17,8 @@ jobs:
               EXTRA_XCONFIGURE_FLAGS="CFLAGS='-arch x86_64'"
           - arch: arm64
     runs-on: macos-14
+    env:
+      GOTOOLCHAIN: local
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
