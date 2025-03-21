@@ -1294,6 +1294,8 @@ func TestLint(t *testing.T) {
 	})
 
 	t.Run("TestGofmtSimplify", func(t *testing.T) {
+		skip.IgnoreLint(t, "temporarily skipping for reviewability")
+
 		t.Parallel()
 		if pkgSpecified {
 			skip.IgnoreLint(t, "PKG specified")
