@@ -186,6 +186,7 @@ func ReadTestdataBytes(r *rand.Rand, arr []byte) {
 // value used. This function should be called from TestMain; individual tests
 // should not touch the seed of the global random number generator.
 func SeedForTests() {
+	//lint:ignore SA1019 seeding the global RNG is deprecated since Go 1.20
 	rand.Seed(globalSeed)
 	log.Printf("random seed: %v", globalSeed)
 }
