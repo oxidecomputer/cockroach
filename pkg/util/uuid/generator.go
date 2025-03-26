@@ -1,4 +1,5 @@
 // Copyright 2019 The Cockroach Authors.
+// Copyright 2025 Oxide Computer Company
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
@@ -18,12 +19,13 @@ package uuid
 
 import (
 	"crypto/md5"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	"crypto/sha1"
 	"encoding/binary"
 	"fmt"
 	"hash"
 	"io"
+	mathrand "math/rand/v2"
 	"net"
 	"sync"
 	"time"
@@ -131,7 +133,7 @@ func NewGenWithHWAF(hwaf HWAddrFunc) *Gen {
 	return &Gen{
 		epochFunc:  time.Now,
 		hwAddrFunc: hwaf,
-		rand:       rand.Reader,
+		rand:       cryptorand.Reader,
 	}
 }
 
@@ -172,18 +174,17 @@ func (g *Gen) NewV3(ns UUID, name string) UUID {
 // NewV4 returns a randomly generated UUID.
 func (g *Gen) NewV4() (UUID, error) {
 	u := UUID{}
-	if r, ok := g.rand.(defaultRandReader); ok {
-		if n, err := r.Read(u[:]); n != len(u) {
-			panic("math/rand.Read always returns len(p)")
+	if g.rand != nil {
+		// Use the provided RNG.
+		if n, err := g.rand.Read(u[:]); n != len(u) {
+			return Nil, errors.New("RNG reader did not fill the UUID")
 		} else if err != nil {
-			panic("math/rand.Read always returns a nil error")
-		}
-	} else {
-		willEscape := UUID{}
-		if _, err := io.ReadFull(g.rand, willEscape[:]); err != nil {
 			return Nil, err
 		}
-		u = willEscape
+	} else {
+		// Use "math/rand/v2".
+		binary.NativeEndian.PutUint64(u[0:8], mathrand.Uint64())
+		binary.NativeEndian.PutUint64(u[8:16], mathrand.Uint64())
 	}
 	u.SetVersion(V4)
 	u.SetVariant(VariantRFC4122)

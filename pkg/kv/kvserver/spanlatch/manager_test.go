@@ -735,6 +735,7 @@ func BenchmarkLatchManagerReadWriteMix(b *testing.B) {
 
 func randBytes(n int) []byte {
 	b := make([]byte, n)
+	//lint:ignore SA1019 "math/rand".Rand is acceptable in test code
 	_, err := rand.Read(b)
 	if err != nil {
 		panic(err)

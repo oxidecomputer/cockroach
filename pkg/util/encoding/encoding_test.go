@@ -446,6 +446,7 @@ func TestDecodeInvalid(t *testing.T) {
 func testPeekLength(t *testing.T, encoded []byte) {
 	gLen := rand.Intn(10)
 	garbage := make([]byte, gLen)
+	//lint:ignore SA1019 "math/rand".Rand is acceptable in test code
 	_, _ = rand.Read(garbage)
 
 	var buf []byte

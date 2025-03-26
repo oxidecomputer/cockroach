@@ -99,7 +99,7 @@ func testStartPreceding(
 					if idx != frameStartIdx {
 						t.Errorf("FrameStartIdx returned wrong result on Preceding: expected %+v, found %+v", idx, frameStartIdx)
 						t.Errorf("Search for %+v when wfr.RowIdx=%+v", value, wfr.RowIdx)
-						t.Errorf(partitionToString(evalCtx.Ctx(), wfr.Rows))
+						t.Error(partitionToString(evalCtx.Ctx(), wfr.Rows))
 						t.Fatal("")
 					}
 					break
@@ -145,7 +145,7 @@ func testStartFollowing(
 					if idx != frameStartIdx {
 						t.Errorf("FrameStartIdx returned wrong result on Following: expected %+v, found %+v", idx, frameStartIdx)
 						t.Errorf("Search for %+v when wfr.RowIdx=%+v", value, wfr.RowIdx)
-						t.Errorf(partitionToString(evalCtx.Ctx(), wfr.Rows))
+						t.Error(partitionToString(evalCtx.Ctx(), wfr.Rows))
 						t.Fatal("")
 					}
 					break
@@ -158,7 +158,7 @@ func testStartFollowing(
 					if idx != frameStartIdx {
 						t.Errorf("FrameStartIdx returned wrong result on Following: expected %+v, found %+v", idx, frameStartIdx)
 						t.Errorf("Search for %+v when wfr.RowIdx=%+v", value, wfr.RowIdx)
-						t.Errorf(partitionToString(evalCtx.Ctx(), wfr.Rows))
+						t.Error(partitionToString(evalCtx.Ctx(), wfr.Rows))
 						t.Fatal("")
 					}
 					break
@@ -208,7 +208,7 @@ func testEndPreceding(
 					if idx+1 != frameEndIdx {
 						t.Errorf("FrameEndIdx returned wrong result on Preceding: expected %+v, found %+v", idx+1, frameEndIdx)
 						t.Errorf("Search for %+v when wfr.RowIdx=%+v", value, wfr.RowIdx)
-						t.Errorf(partitionToString(evalCtx.Ctx(), wfr.Rows))
+						t.Error(partitionToString(evalCtx.Ctx(), wfr.Rows))
 						t.Fatal("")
 					}
 					break
@@ -258,7 +258,7 @@ func testEndFollowing(
 					if idx+1 != frameEndIdx {
 						t.Errorf("FrameEndIdx returned wrong result on Following: expected %+v, found %+v", idx+1, frameEndIdx)
 						t.Errorf("Search for %+v when wfr.RowIdx=%+v", value, wfr.RowIdx)
-						t.Errorf(partitionToString(evalCtx.Ctx(), wfr.Rows))
+						t.Error(partitionToString(evalCtx.Ctx(), wfr.Rows))
 						t.Fatal("")
 					}
 					break

@@ -179,7 +179,7 @@ func run() error {
 		return err
 	}
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	defer close(c)
 	signal.Notify(c, os.Interrupt)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGTERM)

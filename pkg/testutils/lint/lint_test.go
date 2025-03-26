@@ -1,5 +1,5 @@
 // Copyright 2016 The Cockroach Authors.
-// Copyright 2024 Oxide Computer Company
+// Copyright 2025 Oxide Computer Company
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
@@ -1645,9 +1645,18 @@ func TestLint(t *testing.T) {
 			skip.IgnoreLint(t, "the staticcheck tests are run during the bazel build")
 		}
 
+		// [Oxide-specific] Ignore certain checks altogether
+		checks := strings.Join([]string{
+			"inherit",
+			"-S1*",    // Code simplifications
+			"-ST1017", // Don't use Yoda conditions
+		}, ",")
+
 		cmd, stderr, filter, err := dirCmd(
 			root,
 			"staticcheck",
+			"-checks",
+			checks,
 			pkgScope)
 		if err != nil {
 			t.Fatal(err)
@@ -1690,12 +1699,35 @@ func TestLint(t *testing.T) {
 				// Using deprecated WireLength call.
 				stream.GrepNot(`pkg/rpc/stats_handler.go:.*v.WireLength is deprecated: This field is never set.*`),
 				// roachpb/api.go needs v1 Protobuf reflection
-				stream.GrepNot(`pkg/roachpb/api_test.go:.*package github.com/golang/protobuf/proto is deprecated: Use the "google.golang.org/protobuf/proto" package instead.`),
+				stream.GrepNot(`pkg/roachpb/api_test.go:.* "github.com/golang/protobuf/proto" is deprecated: Use the "google.golang.org/protobuf/proto" package instead.`),
 				// rpc/codec.go imports the same proto package that grpc-go imports (as of crdb@dd87d1145 and grpc-go@7b167fd6).
-				stream.GrepNot(`pkg/rpc/codec.go:.*package github.com/golang/protobuf/proto is deprecated: Use the "google.golang.org/protobuf/proto" package instead.`),
+				stream.GrepNot(`pkg/rpc/codec.go:.* "github.com/golang/protobuf/proto" is deprecated: Use the "google.golang.org/protobuf/proto" package instead.`),
 				// goschedstats contains partial copies of go runtime structures, with
 				// many fields that we're not using.
 				stream.GrepNot(`pkg/util/goschedstats/runtime.*\.go:.*is unused`),
+
+				// [Oxide specific] Ignore a wide variety of deprecations and style suggestions.
+				// Generally we should investigate why something is deprecated: if it's because
+				// there is a genuine improvement (such as the new default math/rand RNG in
+				// Go 1.22 that cannot be used if rand.Seed is used), we should pay attention
+				// and follow those recommendations; if it's because of standard library
+				// reorganization (such as all of "io/ioutil" moving elsewhere), maybe it's not
+				// worth the code churn on a maintenance branch.
+				//
+				// io/ioutil is mostly forwards to functions in other packages, with the
+				// exception of ioutil.ReadDir; we have replaced ioutil.ReadDir with os.ReadDir
+				// where trivial to do so.
+				stream.GrepNot(`pkg/.*.go:.* "io/ioutil" has been deprecated`),
+				// The difference in meaning between Temporary and Timeout is non-zero; this
+				// would be a behavior change.
+				stream.GrepNot(`pkg/.*.go:.* (ne|netError).Temporary has been deprecated`),
+				// It is unclear how to safely replace these deprecated types.
+				stream.GrepNot(`pkg/.*.go:.* reflect.(Slice|String)Header has been deprecated`),
+				// PtrTo was renamed to PointerTo.
+				stream.GrepNot(`pkg/.*.go:.* reflect.PtrTo has been deprecated`),
+				// The suggested replacement (golang.org/x/text/cases) would be a behavior
+				// change.
+				stream.GrepNot(`pkg/.*.go:.* strings.Title has been deprecated`),
 			), func(s string) {
 				t.Errorf("\n%s", s)
 			}); err != nil {

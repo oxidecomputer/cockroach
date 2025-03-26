@@ -76,6 +76,7 @@ func TestSoundex(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		l := rand.Int31n(10)
 		b := make([]byte, l)
+		//lint:ignore SA1019 "math/rand".Rand is acceptable in test code
 		rand.Read(b)
 
 		soundex(string(b))

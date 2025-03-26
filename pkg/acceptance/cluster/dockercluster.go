@@ -869,7 +869,7 @@ func (l *DockerCluster) ExecCLI(ctx context.Context, i int, cmd []string) (strin
 // Cleanup removes the cluster's volumes directory, optionally preserving the
 // logs directory.
 func (l *DockerCluster) Cleanup(ctx context.Context, preserveLogs bool) {
-	volumes, err := ioutil.ReadDir(l.volumesDir)
+	volumes, err := os.ReadDir(l.volumesDir)
 	if err != nil {
 		log.Warningf(ctx, "%v", err)
 		return

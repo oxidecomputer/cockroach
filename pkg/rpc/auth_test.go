@@ -49,10 +49,12 @@ func (s *mockServerStream) RecvMsg(m interface{}) error {
 	return nil
 }
 
+type contextKey struct{}
+
 func TestWrappedServerStream(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 	ss := mockServerStream{1, 2, 3}
-	ctx := context.WithValue(context.Background(), struct{}{}, "v")
+	ctx := context.WithValue(context.Background(), contextKey{}, "v")
 
 	var recv int
 	wrapped := &wrappedServerStream{

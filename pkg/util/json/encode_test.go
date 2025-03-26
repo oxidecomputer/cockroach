@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -63,7 +64,7 @@ func TestJSONRandomEncodeRoundTrip(t *testing.T) {
 
 func TestFilesEncode(t *testing.T) {
 	dir := testutils.TestDataPath(t, "raw")
-	dirContents, err := ioutil.ReadDir(dir)
+	dirContents, err := os.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

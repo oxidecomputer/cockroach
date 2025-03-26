@@ -13,7 +13,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -25,7 +24,7 @@ import (
 
 func main() {
 	// First list all tests.
-	infos, err := ioutil.ReadDir("pkg")
+	infos, err := os.ReadDir("pkg")
 	if err != nil {
 		panic(err)
 	}

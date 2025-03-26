@@ -103,6 +103,7 @@ func RandomVec(args RandomVecArgs) {
 			}
 			randBytes := make([]byte, bytesLen)
 			// Read always returns len(bytes[i]) and nil.
+			//lint:ignore SA1019 "math/rand".Read is acceptable in test code
 			_, _ = rand.Read(randBytes)
 			bytes.Set(i, randBytes)
 		}

@@ -508,6 +508,7 @@ func TestFileRegistryRollover(t *testing.T) {
 	numAddedEntries := 0
 	// Large settings slice, so that the test rolls over registry files quickly.
 	encryptionSettings := make([]byte, 1<<20)
+	//lint:ignore SA1019 "math/rand".Rand is acceptable in test code
 	rand.Read(encryptionSettings)
 	// Check that the entries we have added are in the file registry and there
 	// isn't an additional entry.

@@ -618,7 +618,7 @@ func TestMonotonicSafe(t *testing.T) {
 	errs := make(chan error, 100)
 	for i := 0; i < cap(errs); i++ {
 		go func() {
-			u0 := ulid.MustNew(t0, safe)
+			var u0 ulid.ULID
 			u1 := ulid.MustNew(t0, safe)
 			for j := 0; j < 1024; j++ {
 				u0, u1 = u1, ulid.MustNew(t0, safe)

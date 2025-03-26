@@ -1,4 +1,5 @@
 // Copyright 2016 The Cockroach Authors.
+// Copyright 2025 Oxide Computer Company
 //
 // Use of this software is governed by the Business Source License
 // included in the file licenses/BSL.txt.
@@ -14,7 +15,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 
 	"github.com/cockroachdb/cockroach/pkg/util/uint128"
 	"github.com/cockroachdb/errors"
@@ -104,21 +104,13 @@ func MakeV4() UUID {
 func FastMakeV4() UUID {
 	u, err := fastGen.NewV4()
 	if err != nil {
-		panic(errors.Wrap(err, "should never happen with math/rand.Rand"))
+		panic(errors.Wrap(err, "should never happen with math/rand/v2.Uint64"))
 	}
 	return u
 }
 
-// defaultRandReader is an io.Reader that calls through to "math/rand".Read
-// which is safe for concurrent use.
-type defaultRandReader struct{}
-
-func (r defaultRandReader) Read(p []byte) (n int, err error) {
-	return rand.Read(p)
-}
-
-// fastGen is a non-cryptographically secure Generator.
-var fastGen = NewGenWithReader(defaultRandReader{})
+// fastGen is a non-cryptographically secure Generator using "math/rand/v2".
+var fastGen = NewGen()
 
 // NewPopulatedUUID returns a populated UUID.
 func NewPopulatedUUID(r interface {

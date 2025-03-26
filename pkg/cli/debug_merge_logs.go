@@ -172,7 +172,7 @@ func newMergedStreamFromPatterns(
 		return nil, err
 	}
 	files, err := findLogFiles(paths, filePattern, programFilter,
-		groupIndex(filePattern, "program"), to)
+		groupIndex(filePattern, "program"))
 	if err != nil {
 		return nil, err
 	}
@@ -332,12 +332,11 @@ type fileInfo struct {
 }
 
 func findLogFiles(
-	paths []string, filePattern, programFilter *regexp.Regexp, programGroup int, to time.Time,
+	paths []string, filePattern, programFilter *regexp.Regexp, programGroup int,
 ) ([]fileInfo, error) {
 	if programGroup == 0 || programFilter == nil {
 		programGroup = 0
 	}
-	to = to.Truncate(time.Second) // log files only have second resolution
 	var files []fileInfo
 	for _, p := range paths {
 		// NB: come go1.16, we should use WalkDir here as it is more efficient.
