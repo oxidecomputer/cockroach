@@ -319,7 +319,7 @@ pkg/ui/yarn.installed: pkg/ui/package.json pkg/ui/yarn.lock | bin/.submodules-in
 	@# and should not be installed for production builds.
 	@# Also some linux distributions (that are used as development env) don't support some of
 	@# optional dependencies (i.e. cypress) so it is important to make these deps optional.
-	$(NODE_RUN) -C pkg/ui yarn install --ignore-optional --offline
+	$(NODE_RUN) -C pkg/ui yarn install --ignore-optional
 	@# We remove this broken dependency again in pkg/ui/webpack.config.js.
 	@# See the comment there for details.
 	rm -rf pkg/ui/node_modules/@types/node
