@@ -96,7 +96,7 @@ require (
 	github.com/jordan-wright/email v4.0.1-0.20210109023952-943e75fe5223+incompatible
 	github.com/jordanlewis/gcassert v0.0.0-20210709222130-81f5df3faab8
 	github.com/kevinburke/go-bindata v3.13.0+incompatible
-	github.com/kisielk/errcheck v1.6.1-0.20210625163953-8ddee489636a
+	github.com/kisielk/errcheck v1.9.0
 	github.com/kisielk/gotool v1.0.0
 	github.com/knz/go-libedit v1.10.2-0.20230308122845-657a11e944a9
 	github.com/knz/strtime v0.0.0-20200318182718-be999391ffa9
