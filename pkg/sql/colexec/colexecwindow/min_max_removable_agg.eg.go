@@ -194,7 +194,6 @@ func (a *minBoolAggregator) processBatch(batch coldata.Batch, startIdx, endIdx i
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Bool()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -239,7 +238,6 @@ func (a *minBoolAggregator) processBatch(batch coldata.Batch, startIdx, endIdx i
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -518,7 +516,6 @@ func (a *minDecimalAggregator) processBatch(batch coldata.Batch, startIdx, endId
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Decimal()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -563,7 +560,6 @@ func (a *minDecimalAggregator) processBatch(batch coldata.Batch, startIdx, endId
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -673,7 +669,6 @@ func (a *minInt16Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Int16()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -718,7 +713,6 @@ func (a *minInt16Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -850,7 +844,6 @@ func (a *minInt32Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Int32()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -895,7 +888,6 @@ func (a *minInt32Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -1027,7 +1019,6 @@ func (a *minInt64Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Int64()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -1072,7 +1063,6 @@ func (a *minInt64Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -1204,7 +1194,6 @@ func (a *minFloat64Aggregator) processBatch(batch coldata.Batch, startIdx, endId
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Float64()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -1249,7 +1238,6 @@ func (a *minFloat64Aggregator) processBatch(batch coldata.Batch, startIdx, endId
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -1397,7 +1385,6 @@ func (a *minTimestampAggregator) processBatch(batch coldata.Batch, startIdx, end
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Timestamp()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -1442,7 +1429,6 @@ func (a *minTimestampAggregator) processBatch(batch coldata.Batch, startIdx, end
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -1566,7 +1552,6 @@ func (a *minIntervalAggregator) processBatch(batch coldata.Batch, startIdx, endI
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Interval()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -1611,7 +1596,6 @@ func (a *minIntervalAggregator) processBatch(batch coldata.Batch, startIdx, endI
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -1919,7 +1903,6 @@ func (a *minDatumAggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Datum()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -1964,7 +1947,6 @@ func (a *minDatumAggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -2161,7 +2143,6 @@ func (a *maxBoolAggregator) processBatch(batch coldata.Batch, startIdx, endIdx i
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Bool()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -2206,7 +2187,6 @@ func (a *maxBoolAggregator) processBatch(batch coldata.Batch, startIdx, endIdx i
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -2485,7 +2465,6 @@ func (a *maxDecimalAggregator) processBatch(batch coldata.Batch, startIdx, endId
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Decimal()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -2530,7 +2509,6 @@ func (a *maxDecimalAggregator) processBatch(batch coldata.Batch, startIdx, endId
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -2640,7 +2618,6 @@ func (a *maxInt16Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Int16()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -2685,7 +2662,6 @@ func (a *maxInt16Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -2817,7 +2793,6 @@ func (a *maxInt32Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Int32()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -2862,7 +2837,6 @@ func (a *maxInt32Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -2994,7 +2968,6 @@ func (a *maxInt64Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Int64()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -3039,7 +3012,6 @@ func (a *maxInt64Aggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -3171,7 +3143,6 @@ func (a *maxFloat64Aggregator) processBatch(batch coldata.Batch, startIdx, endId
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Float64()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -3216,7 +3187,6 @@ func (a *maxFloat64Aggregator) processBatch(batch coldata.Batch, startIdx, endId
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -3364,7 +3334,6 @@ func (a *maxTimestampAggregator) processBatch(batch coldata.Batch, startIdx, end
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Timestamp()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -3409,7 +3378,6 @@ func (a *maxTimestampAggregator) processBatch(batch coldata.Batch, startIdx, end
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -3533,7 +3501,6 @@ func (a *maxIntervalAggregator) processBatch(batch coldata.Batch, startIdx, endI
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Interval()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -3578,7 +3545,6 @@ func (a *maxIntervalAggregator) processBatch(batch coldata.Batch, startIdx, endI
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}
@@ -3886,7 +3852,6 @@ func (a *maxDatumAggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 	outVec := batch.ColVec(a.outputColIdx)
 	outNulls := outVec.Nulls()
 	outCol := outVec.Datum()
-	_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
@@ -3931,7 +3896,6 @@ func (a *maxDatumAggregator) processBatch(batch coldata.Batch, startIdx, endIdx 
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
-				// gcassert:bce
 				outCol.Set(i, a.curAgg)
 			}
 		}

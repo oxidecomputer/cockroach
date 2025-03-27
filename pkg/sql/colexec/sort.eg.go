@@ -2518,7 +2518,7 @@ func (s *sortInt16AscOp) sortPartitions(partitions []int) {
 	}
 }
 
-//gcassert:inline
+// gcassert:inline
 func (s *sortInt16AscOp) Less(i, j int) bool {
 
 	var lt bool
@@ -2600,7 +2600,7 @@ func (s *sortInt32AscOp) sortPartitions(partitions []int) {
 	}
 }
 
-//gcassert:inline
+// gcassert:inline
 func (s *sortInt32AscOp) Less(i, j int) bool {
 
 	var lt bool
@@ -2682,7 +2682,7 @@ func (s *sortInt64AscOp) sortPartitions(partitions []int) {
 	}
 }
 
-//gcassert:inline
+// gcassert:inline
 func (s *sortInt64AscOp) Less(i, j int) bool {
 
 	var lt bool
@@ -3383,7 +3383,7 @@ func (s *sortInt16DescOp) sortPartitions(partitions []int) {
 	}
 }
 
-//gcassert:inline
+// gcassert:inline
 func (s *sortInt16DescOp) Less(i, j int) bool {
 
 	var lt bool
@@ -3465,7 +3465,7 @@ func (s *sortInt32DescOp) sortPartitions(partitions []int) {
 	}
 }
 
-//gcassert:inline
+// gcassert:inline
 func (s *sortInt32DescOp) Less(i, j int) bool {
 
 	var lt bool
@@ -3547,7 +3547,7 @@ func (s *sortInt64DescOp) sortPartitions(partitions []int) {
 	}
 }
 
-//gcassert:inline
+// gcassert:inline
 func (s *sortInt64DescOp) Less(i, j int) bool {
 
 	var lt bool

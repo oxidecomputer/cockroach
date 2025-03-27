@@ -57,7 +57,6 @@ func (q *minMaxQueue) isEmpty() bool {
 }
 
 // get returns the element at position pos in the minMaxQueue (zero-based).
-// gcassert:inline
 func (q *minMaxQueue) get(pos int) uint32 {
 	if q.empty || pos < 0 || pos >= q.len() {
 		colexecerror.InternalError(errors.AssertionFailedf("index out of bounds: %d", pos))
@@ -66,7 +65,6 @@ func (q *minMaxQueue) get(pos int) uint32 {
 }
 
 // getFirst returns the element at the start of the minMaxQueue.
-// gcassert:inline
 func (q *minMaxQueue) getFirst() uint32 {
 	if q.empty {
 		colexecerror.InternalError(errors.AssertionFailedf("getting first from empty minMaxQueue"))
@@ -75,7 +73,6 @@ func (q *minMaxQueue) getFirst() uint32 {
 }
 
 // getLast returns the element at the end of the minMaxQueue.
-// gcassert:inline
 func (q *minMaxQueue) getLast() uint32 {
 	if q.empty {
 		colexecerror.InternalError(errors.AssertionFailedf("getting last from empty minMaxQueue"))
@@ -87,7 +84,6 @@ func (q *minMaxQueue) getLast() uint32 {
 // underlying slice if necessary, subject to the max length limit. If the
 // minMaxQueue has already reached the maximum length, addLast returns true,
 // otherwise false.
-// gcassert:inline
 func (q *minMaxQueue) addLast(element uint32) (reachedLimit bool) {
 	if q.maybeGrow() {
 		return true
@@ -99,7 +95,6 @@ func (q *minMaxQueue) addLast(element uint32) (reachedLimit bool) {
 }
 
 // removeLast removes a single element from the end of the minMaxQueue.
-// gcassert:inline
 func (q *minMaxQueue) removeLast() {
 	if q.empty {
 		colexecerror.InternalError(errors.AssertionFailedf("removing last from empty ring buffer"))
@@ -113,7 +108,6 @@ func (q *minMaxQueue) removeLast() {
 
 // removeAllBefore removes from the minMaxQueue all values in the range
 // [0, val).
-// gcassert:inline
 func (q *minMaxQueue) removeAllBefore(val uint32) {
 	if q.empty {
 		return
