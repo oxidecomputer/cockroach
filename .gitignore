@@ -24,6 +24,7 @@ artifacts
 work-Fuzz*
 *-fuzz.zip
 /vendor
+/pkg/ui/yarn-vendor
 # vendoring by `go mod vendor` may produce this file temporarily
 /.vendor.tmp.*
 
