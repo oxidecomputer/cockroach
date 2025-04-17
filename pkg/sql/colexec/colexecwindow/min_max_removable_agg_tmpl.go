@@ -174,6 +174,9 @@ func (a *_AGG_TYPEAggregator) processBatch(batch coldata.Batch, startIdx, endIdx
 	outNulls := outVec.Nulls()
 	outCol := outVec.TemplateType()
 	a.allocator.PerformOperation([]coldata.Vec{outVec}, func() {
+		// {{if not .IsBytesLike}}
+		_, _ = outCol.Get(startIdx), outCol.Get(endIdx-1)
+		// {{end}}
 		for i := startIdx; i < endIdx; i++ {
 			a.framer.next(a.Ctx)
 			toAdd, toRemove := a.framer.slidingWindowIntervals()
@@ -217,6 +220,9 @@ func (a *_AGG_TYPEAggregator) processBatch(batch coldata.Batch, startIdx, endIdx
 			if a.queue.isEmpty() {
 				outNulls.SetNull(i)
 			} else {
+				// {{if not .IsBytesLike}}
+				// gcassert:bce
+				// {{end}}
 				outCol.Set(i, a.curAgg)
 			}
 		}

@@ -262,7 +262,8 @@ func (b *Bytes) copyElements(srcElementsToCopy []element, src *Bytes, destIdx in
 			// append the new value to b.buffer.
 			*e = element{}
 			//gcassert:bce
-			e.setNonInlined(srcElementsToCopy[i].getNonInlined(src), b)
+			x := srcElementsToCopy[i]
+			e.setNonInlined(x.getNonInlined(src), b)
 		}
 	}
 }
