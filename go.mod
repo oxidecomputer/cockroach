@@ -108,9 +108,9 @@ require (
 	github.com/lib/pq/auth/kerberos v0.0.0-20220516182748-8c6de565f76f
 	github.com/linkedin/goavro/v2 v2.10.0
 	github.com/lufia/iostat v1.2.1
-	github.com/maruel/panicparse/v2 v2.3.1
+	github.com/maruel/panicparse/v2 v2.4.1-0.20250211135734-9264a04b1be5
 	github.com/marusama/semaphore v0.0.0-20190110074507-6952cef993b2
-	github.com/mattn/go-isatty v0.0.16
+	github.com/mattn/go-isatty v0.0.20
 	github.com/mattn/goveralls v0.0.2
 	github.com/mibk/dupl v1.0.0
 	github.com/mitchellh/reflectwalk v1.0.0
@@ -355,5 +355,3 @@ replace gopkg.in/yaml.v2 => github.com/cockroachdb/yaml v0.0.0-20210825132133-2d
 replace go.etcd.io/etcd/pkg/v3 => go.etcd.io/etcd/pkg/v3 v3.0.0-20201109164711-01844fd28560
 
 replace github.com/docker/docker => github.com/moby/moby v20.10.6+incompatible
-
-replace github.com/maruel/panicparse/v2 => github.com/cockroachdb/panicparse/v2 v2.2.1-0.20241112215947-65c105eaef72
