@@ -2,7 +2,7 @@ module github.com/cockroachdb/cockroach
 
 go 1.22.1
 
-toolchain go1.22.9
+toolchain go1.22.11
 
 require (
 	cloud.google.com/go/kms v1.1.0
