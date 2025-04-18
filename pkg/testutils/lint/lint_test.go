@@ -1294,7 +1294,7 @@ func TestLint(t *testing.T) {
 	})
 
 	t.Run("TestGofmtSimplify", func(t *testing.T) {
-		skip.IgnoreLint(t, "temporarily skipping for reviewability")
+		skip.IgnoreLint(t, "disabled to prevent significant code churn")
 
 		t.Parallel()
 		if pkgSpecified {
