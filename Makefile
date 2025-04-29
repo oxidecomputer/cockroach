@@ -325,7 +325,7 @@ pkg/ui/yarn.installed: pkg/ui/package.json pkg/ui/yarn.lock | bin/.submodules-in
 	rm -rf pkg/ui/node_modules/@types/node
 	touch $@
 
-vendor/modules.txt: go.mod go.sum
+vendor/modules.txt: go.mod go.sum | $(PROJ_DIR)/Makefile
 	$(GO) mod download
 	$(GO) mod vendor
 	$(GO_INSTALL) -v github.com/goware/modvendor
