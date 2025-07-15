@@ -13,7 +13,6 @@ import { storiesOf } from "@storybook/react";
 
 import * as ClusterTooltips from "src/views/cluster/containers/clusterOverview/tooltips";
 import * as NodeOverviewTooltips from "src/views/cluster/containers/nodeOverview/tooltips";
-import * as CapacityArkTooltips from "src/views/clusterviz/components/nodeOrLocality/tooltips";
 import * as GraphTooltips from "src/views/cluster/containers/nodeGraphs/dashboards/graphTooltips";
 import { ToolTipWrapper } from "src/views/shared/components/toolTip";
 import {
@@ -101,7 +100,6 @@ storiesOf("Tooltips/Cluster Overview Page", module)
   .addDecorator(styledWrapper(wrapperStyle))
   .add("Summary tooltips", () => tooltipsStack(ClusterTooltips))
   .add("Node overview tooltips", () => tooltipsStack(NodeOverviewTooltips))
-  .add("Node map tooltips", () => tooltipsStack(CapacityArkTooltips))
   .add("Node List tooltips", () => (
     <>
       {tooltipsStack(plainNodeTooltips)}

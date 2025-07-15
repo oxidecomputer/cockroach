@@ -17,6 +17,12 @@ export interface EncryptionStatusProps {
 }
 
 export default class EncryptionStatus {
+  props: EncryptionStatusProps;
+
+  constructor(props: EncryptionStatusProps) {
+    this.props = props;
+  }
+
   getEncryptionRows(): React.ReactElement<any> {
     return null;
   }

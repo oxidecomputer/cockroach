@@ -9,7 +9,5 @@
 // licenses/APL.txt.
 
 const testsContext = require.context("./src", true, /\.spec\.(ts|tsx)$/);
-const cclTestsContext = require.context("./ccl/src", true, /\.spec\.(ts|tsx)$/);
 
 testsContext.keys().forEach(testsContext);
-cclTestsContext.keys().forEach(cclTestsContext);

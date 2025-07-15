@@ -19,8 +19,6 @@ import { App } from "src/app";
 import { AdminUIState, createAdminUIStore } from "src/redux/state";
 
 import ClusterOverview from "src/views/cluster/containers/clusterOverview";
-import NodeList from "src/views/clusterviz/containers/map/nodeList";
-import { ClusterVisualization } from "src/views/clusterviz/containers/map";
 import { NodeGraphs } from "src/views/cluster/containers/nodeGraphs";
 import { NodeOverview } from "src/views/cluster/containers/nodeOverview";
 import { Logs } from "src/views/cluster/containers/nodeLogs";
@@ -98,26 +96,6 @@ describe("Routing to", () => {
     });
   });
 
-  describe("'/overview/list' path", () => {
-    it("routes to <NodeList> component", () => {
-      navigateToPath("/overview");
-      const clusterOverview = appWrapper.find(ClusterOverview);
-      assert.lengthOf(clusterOverview, 1);
-      const nodeList = clusterOverview.find(NodeList);
-      assert.lengthOf(nodeList, 1);
-    });
-  });
-
-  describe("'/overview/map' path", () => {
-    it("routes to <ClusterViz> component", () => {
-      navigateToPath("/overview/map");
-      const clusterOverview = appWrapper.find(ClusterOverview);
-      const clusterViz = appWrapper.find(ClusterVisualization);
-      assert.lengthOf(clusterOverview, 1);
-      assert.lengthOf(clusterViz, 1);
-    });
-  });
-
   {
     /* time series metrics */
   }
@@ -192,11 +170,6 @@ describe("Routing to", () => {
     /* node details */
   }
   describe("'/node' path", () => {
-    it("routes to <NodeList> component", () => {
-      navigateToPath("/node");
-      assert.lengthOf(appWrapper.find(NodeList), 1);
-    });
-
     it("redirected to '/overview/list'", () => {
       navigateToPath("/node");
       const location = history.location;

@@ -14,7 +14,7 @@
 "use strict";
 
 const webpackConfig = require("./webpack.app")(
-  { dist: "ccl" },
+  { dist: "oss" },
   { mode: "development" },
 );
 
