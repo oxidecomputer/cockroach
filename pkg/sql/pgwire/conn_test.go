@@ -1870,72 +1870,82 @@ func TestPGWireRejectsNewConnIfTooManyConns(t *testing.T) {
 		require.NoError(t, err)
 	}
 
+	checkConnectionCount := func(t *testing.T, expected int) {
+		testutils.SucceedsSoon(t, func() error {
+			actual := getConnectionCount()
+			if actual != expected {
+				return fmt.Errorf("getConnectionCount() returned %d but expected %d", actual, expected)
+			}
+			return nil
+		})
+	}
+
 	// create nonAdmin
 	createUser(nonAdmin)
-	require.Equal(t, 0, getConnectionCount())
+	checkConnectionCount(t, 0)
 
 	// assert default value
 	require.Equal(t, -1, getMaxConnections())
-	require.Equal(t, 0, getConnectionCount())
+	checkConnectionCount(t, 0)
 
 	t.Run("0 max_connections", func(t *testing.T) {
 		setMaxConnections(0)
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 		// can't connect with nonAdmin
 		openConnWithUserError(nonAdmin)
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 		// can connect with admin
 		_, adminCleanup := openConnWithUserSuccess(admin)
-		require.Equal(t, 1, getConnectionCount())
+		checkConnectionCount(t, 1)
 		adminCleanup()
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 	})
 
 	t.Run("1 max_connections nonAdmin -> admin", func(t *testing.T) {
 		setMaxConnections(1)
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 		// can connect with nonAdmin
 		_, nonAdminCleanup := openConnWithUserSuccess(nonAdmin)
-		require.Equal(t, 1, getConnectionCount())
+		checkConnectionCount(t, 1)
 		// can connect with admin
 		_, adminCleanup := openConnWithUserSuccess(admin)
-		require.Equal(t, 2, getConnectionCount())
+		checkConnectionCount(t, 2)
 		adminCleanup()
-		require.Equal(t, 1, getConnectionCount())
+		checkConnectionCount(t, 1)
 		nonAdminCleanup()
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 	})
 
 	t.Run("1 max_connections admin -> nonAdmin", func(t *testing.T) {
 		setMaxConnections(1)
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 		// can connect with admin
 		_, adminCleanup := openConnWithUserSuccess(admin)
-		require.Equal(t, 1, getConnectionCount())
+		checkConnectionCount(t, 1)
 		// can't connect with nonAdmin
 		openConnWithUserError(nonAdmin)
-		require.Equal(t, 1, getConnectionCount())
+		checkConnectionCount(t, 1)
 		adminCleanup()
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 	})
 
 	t.Run("-1 max_connections", func(t *testing.T) {
 		setMaxConnections(-1)
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 		// can connect with multiple nonAdmin
 		_, nonAdminCleanup1 := openConnWithUserSuccess(nonAdmin)
-		require.Equal(t, 1, getConnectionCount())
+		checkConnectionCount(t, 1)
 		_, nonAdminCleanup2 := openConnWithUserSuccess(nonAdmin)
-		require.Equal(t, 2, getConnectionCount())
+		checkConnectionCount(t, 2)
 		// can connect with admin
 		_, adminCleanup := openConnWithUserSuccess(admin)
-		require.Equal(t, 3, getConnectionCount())
+		checkConnectionCount(t, 3)
 		adminCleanup()
-		require.Equal(t, 2, getConnectionCount())
+		checkConnectionCount(t, 2)
 		nonAdminCleanup1()
-		require.Equal(t, 1, getConnectionCount())
+		checkConnectionCount(t, 1)
 		nonAdminCleanup2()
-		require.Equal(t, 0, getConnectionCount())
+		checkConnectionCount(t, 0)
 	})
 }
 
