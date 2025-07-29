@@ -71,7 +71,7 @@ require (
 	github.com/golang-commonmark/markdown v0.0.0-20180910011815-a8f139058164
 	github.com/golang/geo v0.0.0-20200319012246-673a6f80352d
 	github.com/golang/mock v1.6.0
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.4
 	github.com/golang/snappy v0.0.4
 	github.com/google/btree v1.0.1
 	github.com/google/flatbuffers v2.0.0+incompatible
