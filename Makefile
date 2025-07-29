@@ -336,8 +336,8 @@ vendor/modules.txt: go.mod go.sum
 # change.
 # These should be synced with `./pkg/cmd/import-tools/main.go`.
 bin/.bootstrap: vendor/modules.txt
+	@$(GO_INSTALL) -mod=mod -v github.com/bufbuild/buf/cmd/buf@v0.56.0
 	@$(GO_INSTALL) -v \
-		github.com/bufbuild/buf/cmd/buf \
 		github.com/client9/misspell/cmd/misspell \
 		github.com/cockroachdb/crlfmt \
 		github.com/cockroachdb/gostdlib/cmd/gofmt \
