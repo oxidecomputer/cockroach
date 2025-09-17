@@ -1054,10 +1054,11 @@ pre-push: generate lint test ui-lint ui-test
 	! git status --porcelain | read || (git status; git --no-pager diff -a 1>&2; exit 1)
 
 cockroach.tgz: ## Build a binary tarball.
-cockroach.tgz: $(COCKROACHOSS) $(LIBGEOS)
+cockroach.tgz: $(COCKROACHOSS) $(COCKROACHSQL) $(LIBGEOS)
 	rm -rf artifacts/cockroach
 	mkdir -p artifacts/cockroach/lib
 	ln $(COCKROACHOSS) artifacts/cockroach/cockroach
+	ln $(COCKROACHSQL) artifacts/cockroach/cockroach-sql
 	ln $(DYN_LIB_DIR)/libgeos.$(DYN_EXT) $(DYN_LIB_DIR)/libgeos_c.$(DYN_EXT) artifacts/cockroach/lib/
 	tar -cvf - -C artifacts cockroach | gzip -9 > $@
 	sha256sum $@ | awk '{ print $$1 }' > $@.sha256

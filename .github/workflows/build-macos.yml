@@ -30,7 +30,7 @@ jobs:
           source .github/workflows/macos-setup.sh
           echo "PATH=$PATH" >>"$GITHUB_ENV"
       - name: Build
-        run: gmake -j`sysctl -n hw.ncpu` cockroachoss BUILDTYPE=release ${{ matrix.arch.makeargs }}
+        run: gmake -j`sysctl -n hw.ncpu` cockroachoss cockroach-sql BUILDTYPE=release ${{ matrix.arch.makeargs }}
         env:
           BROWSERSLIST_IGNORE_OLD_DATA: 1
           CGO_ENABLED: 1
@@ -40,6 +40,7 @@ jobs:
           name: ${{ matrix.arch.arch }}
           path: |
             cockroachoss
+            cockroach-sql
             lib/libgeos.dylib
             lib/libgeos_c.dylib
           if-no-files-found: error
@@ -55,6 +56,7 @@ jobs:
           set -o xtrace
           mkdir -p artifacts/cockroach/lib
           lipo -create -output artifacts/cockroach/cockroach {amd64,arm64}/cockroachoss
+          lipo -create -output artifacts/cockroach/cockroach-sql {amd64,arm64}/cockroach-sql
           lipo -create -output artifacts/cockroach/lib/libgeos.dylib {amd64,arm64}/lib/libgeos.dylib
           lipo -create -output artifacts/cockroach/lib/libgeos_c.dylib {amd64,arm64}/lib/libgeos_c.dylib
           chmod a+x artifacts/cockroach/{cockroach,lib/*.dylib}
