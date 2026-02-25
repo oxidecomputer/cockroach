@@ -1,19 +1,6 @@
 SOURCE_DIR=$PWD
 source .github/buildomat/versions.sh
 
-# Pin cmake to <4.0. This is staving off the eventual need to either patch,
-# update, or remove GEOS. https://github.com/oxidecomputer/cockroach/issues/18
-#
-# Method loosely based on https://github.com/actions/runner-images/pull/12791
-brew uninstall cmake
-cmake_commit="b4e46db74e74a8c1650b38b1da222284ce1ec5ce"
-tap_name="local/pinned"
-brew tap-new --no-git "$tap_name" >/dev/null
-cmake_formula_dir="$(brew --repo "$tap_name")/Formula"
-mkdir -p "$cmake_formula_dir"
-curl -fsSL "https://raw.githubusercontent.com/Homebrew/homebrew-core/$cmake_commit/Formula/c/cmake.rb" -o "$cmake_formula_dir/cmake.rb"
-brew install "$tap_name/cmake"
-
 brew install autoconf coreutils make
 
 mkdir "$HOME/toolchain"

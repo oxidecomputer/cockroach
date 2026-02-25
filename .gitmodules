@@ -6,4 +6,5 @@
 	url = https://github.com/cockroachdb/geos.git
 [submodule "c-deps/proj"]
 	path = c-deps/proj
-	url = https://github.com/cockroachdb/PROJ.git
+	url = https://github.com/oxidecomputer/PROJ.git
+	branch = 4.9.3-cockroach
