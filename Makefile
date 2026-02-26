@@ -283,16 +283,6 @@ $(call make-lazy,yellow)
 $(call make-lazy,cyan)
 $(call make-lazy,term-reset)
 
-# Warn maintainers for if ccache is not found.
-ifeq (, $(shell which ccache))
-$(info $(yellow)Warning: 'ccache' not found, consider installing it for faster builds$(term-reset))
-endif
-
-# Warn maintainers if bazel is not found.
-ifeq (, $(shell which bazel))
-$(info $(yellow)Warning: 'bazel' not found (`brew install bazelisk` for macs)$(term-reset))
-endif
-
 # Tell Make to delete the target if its recipe fails. Otherwise, if a recipe
 # modifies its target before failing, the target's timestamp will make it appear
 # up-to-date on the next invocation of Make, even though it is likely corrupt.
