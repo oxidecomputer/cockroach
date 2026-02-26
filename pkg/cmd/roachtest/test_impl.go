@@ -551,6 +551,6 @@ func shout(
 		format += "\n"
 	}
 	msg := fmt.Sprintf(format, args...)
-	l.PrintfCtxDepth(ctx, 2 /* depth */, msg)
+	l.PrintfCtxDepth(ctx, 2 /* depth */, "%s", msg)
 	fmt.Fprint(stdout, msg)
 }

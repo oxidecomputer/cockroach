@@ -277,7 +277,7 @@ func mysqlValueToDatum(
 			// TODO(dt): do we want to use this hint to change our decoding logic?
 			return mysqlValueToDatum(v.Expr, desired, evalContext)
 		default:
-			return nil, errors.Errorf("unexpected operator: %q", v.Operator)
+			return nil, errors.Errorf("unexpected operator: %+v", v.Operator)
 		}
 
 	case *mysql.NullVal:

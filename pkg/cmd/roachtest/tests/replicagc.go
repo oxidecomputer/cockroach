@@ -252,7 +252,7 @@ func (h *replicagcTestHelper) isolateDeadNodes(ctx context.Context, runNode int)
 		"RANGE default", "RANGE meta", "RANGE system", "RANGE liveness", "DATABASE system", "TABLE system.jobs",
 	} {
 		stmt := `ALTER ` + change + ` CONFIGURE ZONE = 'constraints: {"-` + deadNodeAttr + `"}'`
-		h.t.L().Printf(stmt + "\n")
+		h.t.L().Printf("%s\n", stmt)
 		if _, err := db.ExecContext(ctx, stmt); err != nil {
 			h.t.Fatal(err)
 		}

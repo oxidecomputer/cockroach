@@ -475,7 +475,7 @@ func (ex *connExecutor) execBind(
 	}
 
 	if log.V(2) {
-		log.Infof(ctx, "portal: %q for %q, args %q, formats %q",
+		log.Infof(ctx, "portal: %q for %v, args %q, formats %q",
 			portalName, ps.Statement, qargs, columnFormatCodes)
 	}
 

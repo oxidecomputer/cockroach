@@ -218,8 +218,7 @@ func serverError(ctx context.Context, err error) error {
 	// Include the PGCode in the message for easier troubleshooting
 	errCode := pgerror.GetPGCode(err).String()
 	if errCode != pgcode.Uncategorized.String() {
-		errMessage := fmt.Sprintf("%s Error Code: %s", errAPIInternalErrorString, errCode)
-		return status.Errorf(codes.Internal, errMessage)
+		return status.Errorf(codes.Internal, "%s Error Code: %s", errAPIInternalErrorString, errCode)
 	}
 
 	// The error is already grpcstatus formatted error.

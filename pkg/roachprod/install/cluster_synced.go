@@ -1473,8 +1473,8 @@ func (c *SyncedCluster) Put(ctx context.Context, l *logger.Logger, src, dest str
 			return err
 		}
 		redColor, resetColor := "\033[31m", "\033[0m"
-		l.Printf(redColor + "WARNING: Source file is a symlink." + resetColor)
-		l.Printf(redColor+"WARNING: Remote file will inherit the target permissions '%v'."+resetColor, symlinkTargetInfo.Mode())
+		l.Printf("%sWARNING: Source file is a symlink.%s", redColor, resetColor)
+		l.Printf("%sWARNING: Remote file will inherit the target permissions '%v'.%s", redColor, symlinkTargetInfo.Mode(), resetColor)
 	}
 
 	// NB: This value was determined with a few experiments. Higher values were

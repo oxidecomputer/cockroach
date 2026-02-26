@@ -125,7 +125,7 @@ func (t *tenantAdminServer) Drain(
 	// Which node is this request for?
 	parsedInstanceID, local, err := t.status.parseInstanceID(req.NodeId)
 	if err != nil {
-		return status.Errorf(codes.InvalidArgument, err.Error())
+		return status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 	if !local {
 		instance, err := t.sqlServer.sqlInstanceProvider.GetInstance(ctx, parsedInstanceID)

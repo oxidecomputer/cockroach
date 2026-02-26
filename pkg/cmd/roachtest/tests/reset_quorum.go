@@ -95,7 +95,7 @@ OR
 		if buf.Len() == 0 {
 			break
 		}
-		t.L().Printf("still waiting:\n" + buf.String())
+		t.L().Printf("still waiting:\n%s", buf.String())
 		time.Sleep(5 * time.Second)
 	}
 

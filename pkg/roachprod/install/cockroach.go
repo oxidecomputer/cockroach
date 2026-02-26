@@ -650,7 +650,7 @@ func (c *SyncedCluster) initializeCluster(ctx context.Context, l *logger.Logger,
 	}
 
 	if out := strings.TrimSpace(string(out)); out != "" {
-		l.Printf(out)
+		l.Printf("%s", out)
 	}
 	return nil
 }
@@ -667,7 +667,7 @@ func (c *SyncedCluster) setClusterSettings(ctx context.Context, l *logger.Logger
 		return errors.Wrapf(err, "~ %s\n%s", cmd, out)
 	}
 	if out := strings.TrimSpace(string(out)); out != "" {
-		l.Printf(out)
+		l.Printf("%s", out)
 	}
 	return nil
 }

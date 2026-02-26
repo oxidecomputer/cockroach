@@ -168,6 +168,7 @@ func Event(ctx context.Context, msg string) {
 		channel.DEV,   /* unused for trace events */
 		1,             /* depth */
 		sp.Redactable(),
+		"%s",
 		msg)
 	eventInternal(sp, el, false /* isErr */, &entry)
 }
@@ -222,7 +223,7 @@ func vEventf(
 // active trace or event log) or to the trace/event log alone, depending on
 // whether the specified verbosity level is active.
 func VEvent(ctx context.Context, level Level, msg string) {
-	vEventf(ctx, false /* isErr */, 1, level, msg)
+	vEventf(ctx, false /* isErr */, 1, level, "%s", msg)
 }
 
 // VEventf either logs a message to the DEV channel (which also outputs to the
@@ -242,7 +243,7 @@ func VEventfDepth(ctx context.Context, depth int, level Level, format string, ar
 // to the active trace or event log) or to the trace/event log alone, depending
 // on whether the specified verbosity level is active.
 func VErrEvent(ctx context.Context, level Level, msg string) {
-	vEventf(ctx, true /* isErr */, 1, level, msg)
+	vEventf(ctx, true /* isErr */, 1, level, "%s", msg)
 }
 
 // VErrEventf either logs an error message to the DEV Channel (which also outputs

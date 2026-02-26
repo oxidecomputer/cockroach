@@ -12,6 +12,7 @@ package grpcutil
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"os"
 	"regexp"
@@ -136,14 +137,14 @@ func (l *grpcLogger) Info(args ...interface{}) {
 	if !l.shouldLog(severity.INFO, depth2) {
 		return
 	}
-	log.InfofDepth(context.TODO(), depth2, "", args...)
+	log.InfofDepth(context.TODO(), depth2, "%s", fmt.Sprint(args...))
 }
 
 func (l *grpcLogger) Infoln(args ...interface{}) {
 	if !l.shouldLog(severity.INFO, depth2) {
 		return
 	}
-	log.InfofDepth(context.TODO(), depth2, "", args...)
+	log.InfofDepth(context.TODO(), depth2, "%s\n", fmt.Sprint(args...))
 }
 
 func (l *grpcLogger) Infof(format string, args ...interface{}) {
@@ -160,14 +161,14 @@ func (l *grpcLogger) Warning(args ...interface{}) {
 	if !l.shouldPrintWarning(depth2, args...) {
 		return
 	}
-	log.WarningfDepth(context.TODO(), depth2, "", args...)
+	log.WarningfDepth(context.TODO(), depth2, "%s", fmt.Sprint(args...))
 }
 
 func (l *grpcLogger) Warningln(args ...interface{}) {
 	if !l.shouldLog(severity.WARNING, depth2) {
 		return
 	}
-	log.WarningfDepth(context.TODO(), depth2, "", args...)
+	log.WarningfDepth(context.TODO(), depth2, "%s\n", fmt.Sprint(args...))
 }
 
 func (l *grpcLogger) Warningf(format string, args ...interface{}) {
@@ -181,14 +182,14 @@ func (l *grpcLogger) Error(args ...interface{}) {
 	if !l.shouldLog(severity.ERROR, depth2) {
 		return
 	}
-	log.ErrorfDepth(context.TODO(), depth2, "", args...)
+	log.ErrorfDepth(context.TODO(), depth2, "%s", fmt.Sprint(args...))
 }
 
 func (l *grpcLogger) Errorln(args ...interface{}) {
 	if !l.shouldLog(severity.ERROR, depth2) {
 		return
 	}
-	log.ErrorfDepth(context.TODO(), depth2, "", args...)
+	log.ErrorfDepth(context.TODO(), depth2, "%s\n", fmt.Sprint(args...))
 }
 
 func (l *grpcLogger) Errorf(format string, args ...interface{}) {
@@ -199,11 +200,11 @@ func (l *grpcLogger) Errorf(format string, args ...interface{}) {
 }
 
 func (l *grpcLogger) Fatal(args ...interface{}) {
-	log.FatalfDepth(context.TODO(), depth2, "", args...)
+	log.FatalfDepth(context.TODO(), depth2, "%s", fmt.Sprint(args...))
 }
 
 func (l *grpcLogger) Fatalln(args ...interface{}) {
-	log.FatalfDepth(context.TODO(), depth2, "", args...)
+	log.FatalfDepth(context.TODO(), depth2, "%s\n", fmt.Sprint(args...))
 }
 
 func (l *grpcLogger) Fatalf(format string, args ...interface{}) {

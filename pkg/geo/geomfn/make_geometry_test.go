@@ -251,7 +251,7 @@ func TestMakePolygon(t *testing.T) {
 			}
 			polygon, err := MakePolygon(outer, interior...)
 			if tc.err != nil {
-				require.Errorf(t, err, tc.err.Error())
+				require.Errorf(t, err, "%s", tc.err.Error())
 				require.EqualError(t, err, tc.err.Error())
 			} else {
 				require.NoError(t, err)

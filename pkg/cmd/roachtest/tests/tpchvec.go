@@ -233,18 +233,18 @@ func (p *tpchVecPerfTest) postTestRunHook(
 		vecOffTime := findMedian(vecOffTimes)
 		if vecOffTime < vecOnTime {
 			t.L().Printf(
-				fmt.Sprintf("[q%d] vec OFF was faster by %.2f%%: "+
+				"[q%d] vec OFF was faster by %.2f%%: "+
 					"%.2fs ON vs %.2fs OFF --- WARNING\n"+
 					"vec ON times: %v\t vec OFF times: %v",
-					queryNum, 100*(vecOnTime-vecOffTime)/vecOffTime,
-					vecOnTime, vecOffTime, vecOnTimes, vecOffTimes))
+				queryNum, 100*(vecOnTime-vecOffTime)/vecOffTime,
+				vecOnTime, vecOffTime, vecOnTimes, vecOffTimes)
 		} else {
 			t.L().Printf(
-				fmt.Sprintf("[q%d] vec ON was faster by %.2f%%: "+
+				"[q%d] vec ON was faster by %.2f%%: "+
 					"%.2fs ON vs %.2fs OFF\n"+
 					"vec ON times: %v\t vec OFF times: %v",
-					queryNum, 100*(vecOffTime-vecOnTime)/vecOnTime,
-					vecOnTime, vecOffTime, vecOnTimes, vecOffTimes))
+				queryNum, 100*(vecOffTime-vecOnTime)/vecOnTime,
+				vecOnTime, vecOffTime, vecOnTimes, vecOffTimes)
 		}
 		if vecOnTime >= tpchVecPerfSlownessThreshold*vecOffTime {
 			// For some reason, the vectorized engine executed the query a lot
@@ -407,11 +407,11 @@ func (b *tpchVecBenchTest) postTestRunHook(
 				bestSetupIdx = setupIdx
 			}
 		}
-		t.L().Printf(fmt.Sprintf("[q%d] best setup is %s", queryNum, runConfig.setupNames[bestSetupIdx]))
+		t.L().Printf("[q%d] best setup is %s", queryNum, runConfig.setupNames[bestSetupIdx])
 		for setupIdx, setupName := range runConfig.setupNames {
 			setupTime := findAvgTime(b.timeByQueryNum[setupIdx][queryNum])
 			scores[setupIdx] += setupTime / bestTime
-			t.L().Printf(fmt.Sprintf("[q%d] setup %s took %.2fs", queryNum, setupName, setupTime))
+			t.L().Printf("[q%d] setup %s took %.2fs", queryNum, setupName, setupTime)
 		}
 	}
 	t.Status("----- scores of the setups -----")
@@ -419,7 +419,7 @@ func (b *tpchVecBenchTest) postTestRunHook(
 	var bestSetupIdx int
 	for setupIdx, setupName := range runConfig.setupNames {
 		score := scores[setupIdx]
-		t.L().Printf(fmt.Sprintf("score of %s is %.2f", setupName, score))
+		t.L().Printf("score of %s is %.2f", setupName, score)
 		if bestScore > score {
 			bestScore = score
 			bestSetupIdx = setupIdx
@@ -474,7 +474,7 @@ func baseTestRun(
 				runConfig.numRunsPerQuery, queryNum)
 			result, err := c.RunWithDetailsSingleNode(ctx, t.L(), firstNode, cmd)
 			workloadOutput := result.Stdout + result.Stderr
-			t.L().Printf(workloadOutput)
+			t.L().Printf("%s", workloadOutput)
 			if err != nil {
 				// Note: if you see an error like "exit status 1", it is likely caused
 				// by the erroneous output of the query.

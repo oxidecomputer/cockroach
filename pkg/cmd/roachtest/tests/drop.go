@@ -131,7 +131,7 @@ func registerDrop(r registry.Registry) {
 					}
 
 					nodeSpaceUsed := fmt.Sprintf("Node %d space after deletion used: %s\n", j, humanizeutil.IBytes(int64(size)))
-					t.L().Printf(nodeSpaceUsed)
+					t.L().Printf("%s", nodeSpaceUsed)
 
 					// Return if the size of the directory is less than 100mb
 					if size > maxSizeBytes {
@@ -149,7 +149,7 @@ func registerDrop(r registry.Registry) {
 			if !allNodesSpaceCleared {
 				sizeReport += fmt.Sprintf("disk space usage has not dropped below %s on all nodes.",
 					humanizeutil.IBytes(int64(maxSizeBytes)))
-				t.Fatalf(sizeReport)
+				t.Fatalf("%s", sizeReport)
 			}
 
 			return nil

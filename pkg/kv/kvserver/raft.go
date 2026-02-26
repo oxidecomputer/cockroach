@@ -59,7 +59,7 @@ type raftLogger struct {
 
 func (r *raftLogger) Debug(v ...interface{}) {
 	if log.V(3) {
-		log.InfofDepth(r.ctx, 1, "", v...)
+		log.InfofDepth(r.ctx, 1, "%s", fmt.Sprint(v...))
 	}
 }
 
@@ -71,7 +71,7 @@ func (r *raftLogger) Debugf(format string, v ...interface{}) {
 
 func (r *raftLogger) Info(v ...interface{}) {
 	if log.V(2) {
-		log.InfofDepth(r.ctx, 1, "", v...)
+		log.InfofDepth(r.ctx, 1, "%s", fmt.Sprint(v...))
 	}
 }
 
@@ -82,7 +82,7 @@ func (r *raftLogger) Infof(format string, v ...interface{}) {
 }
 
 func (r *raftLogger) Warning(v ...interface{}) {
-	log.WarningfDepth(r.ctx, 1, "", v...)
+	log.WarningfDepth(r.ctx, 1, "%s", fmt.Sprint(v...))
 }
 
 func (r *raftLogger) Warningf(format string, v ...interface{}) {
@@ -90,7 +90,7 @@ func (r *raftLogger) Warningf(format string, v ...interface{}) {
 }
 
 func (r *raftLogger) Error(v ...interface{}) {
-	log.ErrorfDepth(r.ctx, 1, "", v...)
+	log.ErrorfDepth(r.ctx, 1, "%s", fmt.Sprint(v...))
 }
 
 func (r *raftLogger) Errorf(format string, v ...interface{}) {
@@ -99,7 +99,7 @@ func (r *raftLogger) Errorf(format string, v ...interface{}) {
 
 func (r *raftLogger) Fatal(v ...interface{}) {
 	wrapNumbersAsSafe(v)
-	log.FatalfDepth(r.ctx, 1, "", v...)
+	log.FatalfDepth(r.ctx, 1, "%s", fmt.Sprint(v...))
 }
 
 func (r *raftLogger) Fatalf(format string, v ...interface{}) {
@@ -109,7 +109,7 @@ func (r *raftLogger) Fatalf(format string, v ...interface{}) {
 
 func (r *raftLogger) Panic(v ...interface{}) {
 	wrapNumbersAsSafe(v)
-	log.FatalfDepth(r.ctx, 1, "", v...)
+	log.FatalfDepth(r.ctx, 1, "%s", fmt.Sprint(v...))
 }
 
 func (r *raftLogger) Panicf(format string, v ...interface{}) {

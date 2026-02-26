@@ -175,7 +175,7 @@ func (s *Server) Decommission(
 				return grpcstatus.Error(codes.NotFound, liveness.ErrMissingRecord.Error())
 			}
 			log.Errorf(ctx, "%+s", err)
-			return grpcstatus.Errorf(codes.Internal, err.Error())
+			return grpcstatus.Errorf(codes.Internal, "%s", err.Error())
 		}
 		if statusChanged {
 			nodeDetails.TargetNodeID = int32(nodeID)

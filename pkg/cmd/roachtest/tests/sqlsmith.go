@@ -300,7 +300,7 @@ INSERT INTO seed_mr_table DEFAULT VALUES;`, regionList[0]),
 					sb.WriteString(errStr)
 					sb.WriteString(hintStr)
 
-					t.Fatalf(sb.String())
+					t.Fatalf("%s", sb.String())
 				}
 			}
 		}

@@ -432,7 +432,7 @@ func (t *tenantStatusServer) ResetSQLStats(
 	if len(req.NodeID) > 0 {
 		parsedInstanceID, local, err := t.parseInstanceID(req.NodeID)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, err.Error())
+			return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 		}
 		if local {
 			controller.ResetLocalSQLStats(ctx)
@@ -559,7 +559,7 @@ func (t *tenantStatusServer) Statements(
 		// we are executing in the context of a tenant.
 		parsedInstanceID, local, err := t.parseInstanceID(req.NodeID)
 		if err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, err.Error())
+			return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 		}
 		if local {
 			return statementsLocal(
@@ -775,7 +775,7 @@ func (t *tenantStatusServer) Profile(
 
 	instanceID, local, err := t.parseInstanceID(request.NodeId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 	if !local {
 		instance, err := t.sqlServer.sqlInstanceProvider.GetInstance(ctx, instanceID)
@@ -808,7 +808,7 @@ func (t *tenantStatusServer) Stacks(
 
 	instanceID, local, err := t.parseInstanceID(request.NodeId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 	if !local {
 		instance, err := t.sqlServer.sqlInstanceProvider.GetInstance(ctx, instanceID)
@@ -1003,7 +1003,7 @@ func (t *tenantStatusServer) Details(
 
 	instanceID, local, err := t.parseInstanceID(req.NodeId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 	if !local {
 		instance, err := t.sqlServer.sqlInstanceProvider.GetInstance(ctx, instanceID)
@@ -1067,7 +1067,7 @@ func (t *tenantStatusServer) TxnIDResolution(
 
 	instanceID, local, err := t.parseInstanceID(req.CoordinatorID)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 	if local {
 		return t.localTxnIDResolution(req), nil
@@ -1112,7 +1112,7 @@ func (t *tenantStatusServer) GetFiles(
 
 	instanceID, local, err := t.parseInstanceID(req.NodeId)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, err.Error())
+		return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 	}
 	if !local {
 		instance, err := t.sqlServer.sqlInstanceProvider.GetInstance(ctx, instanceID)

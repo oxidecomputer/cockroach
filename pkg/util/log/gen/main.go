@@ -316,7 +316,7 @@ func (logger{{.Name}}) V{{with $sev}}{{.Name}}{{end}}f(ctx context.Context, leve
 //
 {{with $sev}}{{.Comment}}{{end -}}
 func (logger{{.Name}}) {{with $sev}}{{.Name}}{{end}}(ctx context.Context, msg string) {
-  logfDepth(ctx, 1, severity.{{with $sev}}{{.NAME}}{{end}}, channel.{{.NAME}}, msg)
+  logfDepth(ctx, 1, severity.{{with $sev}}{{.NAME}}{{end}}, channel.{{.NAME}}, "%s", msg)
 }
 
 // {{with $sev}}{{.Name}}{{end}}fDepth logs to the {{.NAME}} channel with severity {{with $sev}}{{.NAME}}{{end}},
@@ -366,7 +366,7 @@ func V{{with $sev}}{{.Name}}{{end}}f(ctx context.Context, level Level, format st
 //
 {{with $sev}}{{.Comment}}{{end -}}
 func {{with $sev}}{{.Name}}{{end}}(ctx context.Context, msg string) {
-  logfDepth(ctx, 1, severity.{{with $sev}}{{.NAME}}{{end}}, channel.{{.NAME}}, msg)
+  logfDepth(ctx, 1, severity.{{with $sev}}{{.NAME}}{{end}}, channel.{{.NAME}}, "%s", msg)
 }
 
 // {{with $sev}}{{.Name}}{{end}}fDepth logs to the {{.NAME}} channel with severity {{with $sev}}{{.NAME}}{{end}},
@@ -389,7 +389,7 @@ func {{with $sev}}{{.Name}}{{end}}fDepth(ctx context.Context, depth int, format 
 //
 {{.Comment -}}
 func (logger{{.Name}}) Shout(ctx context.Context, sev Severity, msg string) {
-  shoutfDepth(ctx, 1, sev, channel.{{.NAME}}, msg)
+  shoutfDepth(ctx, 1, sev, channel.{{.NAME}}, "%s", msg)
 }
 
 // Shoutf logs to channel {{.NAME}}, and also to the real stderr if
@@ -408,7 +408,7 @@ func (logger{{.Name}}) Shoutf(ctx context.Context, sev Severity, format string, 
 //
 {{.Comment -}}
 func Shout(ctx context.Context, sev Severity, msg string) {
-  shoutfDepth(ctx, 1, sev, channel.{{.NAME}}, msg)
+  shoutfDepth(ctx, 1, sev, channel.{{.NAME}}, "%s", msg)
 }
 
 // Shoutf logs to channel {{.NAME}}, and also to the real stderr if

@@ -60,7 +60,7 @@ func (ge *GraphiteExporter) Push(ctx context.Context, endpoint string) error {
 		Timeout:       10 * time.Second,
 		ErrorHandling: graphite.AbortOnError,
 		Logger: loggerFunc(func(args ...interface{}) {
-			log.InfofDepth(ctx, 1, "", args...)
+			log.InfofDepth(ctx, 1, "%s", fmt.Sprint(args...))
 		}),
 	}); err != nil {
 		return err

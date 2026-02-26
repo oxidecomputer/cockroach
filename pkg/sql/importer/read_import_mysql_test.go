@@ -95,7 +95,7 @@ func TestMysqldumpDataReader(t *testing.T) {
 		}
 		if expected.s != injectNull {
 			if actual := *row[1].(*tree.DString); expected.s != string(actual) {
-				t.Fatalf("row %d: expected s = %q, got %q", i, expected.i, actual)
+				t.Fatalf("row %d: expected s = %q, got %q", i, expected.s, actual)
 			}
 		} else if row[1] != tree.DNull {
 			t.Fatalf("row %d: expected b = NULL, got %T: %v", i, row[1], row[1])

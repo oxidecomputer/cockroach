@@ -23,6 +23,7 @@ var errAPIInternalErrorString = "An internal server error has occurred. Please c
 
 var errAPIInternalError = status.Errorf(
 	codes.Internal,
+	"%s",
 	errAPIInternalErrorString,
 )
 

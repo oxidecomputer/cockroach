@@ -125,9 +125,9 @@ SELECT string_agg(source_id::TEXT || ':' || target_id::TEXT, ',')
 					return false
 				}
 
-				for i := range liveNodes {
-					if liveNodes[i] != expLiveNodes[i] {
-						t.L().Printf("%d: gossip not ok (mismatched view of live nodes); expected %s, got %s (%.0fs)\n",
+				for j := range liveNodes {
+					if liveNodes[j] != expLiveNodes[j] {
+						t.L().Printf("%d: gossip not ok (mismatched view of live nodes: %s); expected %v, got %v (%.0fs)\n",
 							i, gossipNetwork, expLiveNodes, liveNodes, timeutil.Since(start).Seconds())
 						return false
 					}

@@ -467,7 +467,7 @@ func TestConcurrencyManagerBasic(t *testing.T) {
 				mon.runSync("update txn", func(ctx context.Context) {
 					log.Eventf(ctx, "%s %s", verb, txnName)
 					if err := c.updateTxnRecord(txn.ID, status, ts); err != nil {
-						d.Fatalf(t, err.Error())
+						d.Fatalf(t, "%s", err.Error())
 					}
 				})
 				return c.waitAndCollect(t, mon)

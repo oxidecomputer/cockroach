@@ -1043,7 +1043,7 @@ func (f *ExprFmtCtx) scalarPropsStrings(scalar opt.ScalarExpr) []string {
 				emitProp("outer=%s", scalarProps.OuterCols)
 			}
 			if !scalarProps.VolatilitySet.IsLeakProof() {
-				emitProp(scalarProps.VolatilitySet.String())
+				emitProp("%s", scalarProps.VolatilitySet.String())
 			}
 			if scalarProps.HasCorrelatedSubquery {
 				emitProp("correlated-subquery")

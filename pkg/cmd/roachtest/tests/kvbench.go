@@ -263,7 +263,7 @@ func runKVBench(ctx context.Context, t test.Test, c cluster.Cluster, b kvBenchSp
 				splitCmd.WriteString(`;`)
 			}
 			if _, err := db.Exec(splitCmd.String()); err != nil {
-				t.L().Printf(splitCmd.String())
+				t.L().Printf("%s", splitCmd.String())
 				return err
 			}
 

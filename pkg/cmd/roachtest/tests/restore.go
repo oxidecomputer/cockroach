@@ -144,7 +144,7 @@ func (hc *HealthChecker) Runner(ctx context.Context) (err error) {
 			rr = append(rr, a)
 		}
 		if len(rr) > 0 {
-			logger.Printf(rr.String() + "\n")
+			logger.Printf("%s\n", rr.String())
 			// TODO(tschottdorf): see method comment.
 			// return errors.New(rr.String())
 		}

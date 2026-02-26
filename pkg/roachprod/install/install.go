@@ -165,7 +165,7 @@ func Install(ctx context.Context, l *logger.Logger, c *SyncedCluster, args []str
 		var buf bytes.Buffer
 		err := c.Run(ctx, l, &buf, &buf, c.Nodes, "installing "+title, cmd)
 		if err != nil {
-			l.Printf(buf.String())
+			l.Printf("%s", buf.String())
 		}
 		return err
 	}

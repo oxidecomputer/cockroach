@@ -227,7 +227,7 @@ func (e *scheduledSQLStatsCompactionExecutor) NotifyJobTermination(
 		e.metrics.NumSucceeded.Inc(1)
 	}
 
-	sj.SetScheduleStatus(string(jobStatus))
+	sj.SetScheduleStatus("%s", string(jobStatus))
 
 	return nil
 }

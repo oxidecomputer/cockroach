@@ -148,14 +148,14 @@ func (a *analyzerConfig) runFunc(pass *analysis.Pass, fn *ssa.Function) {
 	// notNil reports an error if v is provably nil.
 	notNil := func(stack []fact, instr ssa.Instruction, v ssa.Value, descr string) {
 		if nilnessOf(stack, v) == isnil {
-			reportf("nilderef", instr.Pos(), "nil dereference in "+descr)
+			reportf("nilderef", instr.Pos(), "nil dereference in %s", descr)
 		}
 	}
 
 	// notNilArg reports an error if v is provably nil.
 	notNilArg := func(stack []fact, instr ssa.Instruction, v ssa.Value, descr string) {
 		if nilnessOf(stack, v) == isnil {
-			reportf("nilarg", instr.Pos(), "nil argument to "+descr)
+			reportf("nilarg", instr.Pos(), "nil argument to %s", descr)
 		}
 	}
 

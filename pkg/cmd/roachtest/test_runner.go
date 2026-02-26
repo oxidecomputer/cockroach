@@ -643,7 +643,7 @@ func (r *testRunner) runWorker(
 				msg = "test failed: %s (run %d)"
 			}
 			msg = fmt.Sprintf(msg, t.Name(), testToRun.runNum)
-			l.PrintfCtx(ctx, msg)
+			l.PrintfCtx(ctx, "%s", msg)
 		}
 		testL.Close()
 		if err != nil || t.Failed() {

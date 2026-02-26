@@ -71,7 +71,7 @@ func profileLocal(
 		}
 		var buf bytes.Buffer
 		if err := p.WriteTo(&buf, 0); err != nil {
-			return nil, status.Errorf(codes.Internal, err.Error())
+			return nil, status.Errorf(codes.Internal, "%s", err.Error())
 		}
 		return &serverpb.JSONResponse{Data: buf.Bytes()}, nil
 	}
@@ -119,7 +119,7 @@ func getLocalFiles(
 	var resp serverpb.GetFilesResponse
 	for _, pattern := range req.Patterns {
 		if err := checkFilePattern(pattern); err != nil {
-			return nil, status.Errorf(codes.InvalidArgument, err.Error())
+			return nil, status.Errorf(codes.InvalidArgument, "%s", err.Error())
 		}
 		filepaths, err := filepath.Glob(filepath.Join(dir, pattern))
 		if err != nil {
@@ -132,7 +132,7 @@ func getLocalFiles(
 			if !req.ListOnly {
 				contents, err = ioutil.ReadFile(path)
 				if err != nil {
-					return nil, status.Errorf(codes.Internal, err.Error())
+					return nil, status.Errorf(codes.Internal, "%s", err.Error())
 				}
 			}
 			resp.Files = append(resp.Files,
