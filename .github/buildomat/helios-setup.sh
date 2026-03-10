@@ -9,7 +9,7 @@ pfexec pkg install \
 pushd /work
 mkdir bin
 curl -sSfL --retry 10 -O "https://github.com/yarnpkg/yarn/releases/download/v$YARN_VERSION/yarn-$YARN_VERSION.js"
-sha256sum --ignore-missing -c "$OLDPWD/.github/buildomat/SHA256SUMS"
+sha256sum -c "$OLDPWD/.github/buildomat/SHA256SUMS.helios"
 mv "yarn-$YARN_VERSION.js" bin/yarn
 chmod a+x bin/yarn
 popd
