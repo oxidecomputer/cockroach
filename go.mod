@@ -52,7 +52,7 @@ require (
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd
 	github.com/containerd/containerd v1.5.4
 	github.com/dave/dst v0.24.0
-	github.com/docker/distribution v2.7.1+incompatible
+	github.com/docker/distribution v2.8.2+incompatible
 	github.com/docker/docker v20.10.8+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/dustin/go-humanize v1.0.0
