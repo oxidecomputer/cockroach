@@ -544,14 +544,13 @@ func (r *testRunner) runWorker(
 			}
 		}
 		var clusterCreateErr error
-		var vmCreateOpts *vm.CreateOpts
 
 		if !testToRun.canReuseCluster {
 			// Create a new cluster if can't reuse or reuse attempt failed.
 			// N.B. non-reusable cluster would have been destroyed above.
 			wStatus.SetTest(nil /* test */, testToRun)
 			wStatus.SetStatus("creating cluster")
-			c, vmCreateOpts, clusterCreateErr = allocateCluster(ctx, testToRun.spec, testToRun.alloc, artifactsRootDir, wStatus)
+			c, _, clusterCreateErr = allocateCluster(ctx, testToRun.spec, testToRun.alloc, artifactsRootDir, wStatus)
 			if clusterCreateErr != nil {
 				clusterCreateErr = errors.Mark(clusterCreateErr, errClusterProvisioningFailed)
 				atomic.AddInt32(&r.numClusterErrs, 1)
@@ -593,8 +592,6 @@ func (r *testRunner) runWorker(
 		// Now run the test.
 		l.PrintfCtx(ctx, "starting test: %s:%d", testToRun.spec.Name, testToRun.runNum)
 
-		github := newGithubIssues(r.config.disableIssue, c, vmCreateOpts, l)
-
 		if clusterCreateErr != nil {
 			// N.B. cluster creation must have failed...
 			// We don't want to prematurely abort the test suite since it's likely a transient issue.
@@ -602,10 +599,6 @@ func (r *testRunner) runWorker(
 
 			// Generate failure reason and mark the test failed to preclude fetching (cluster) artifacts.
 			t.Error(clusterCreateErr)
-			// N.B. issue title is of the form "roachtest: ${t.spec.Name} failed" (see UnitTestFormatter).
-			if err := github.MaybePost(t, t.failureMsg()); err != nil {
-				shout(ctx, l, stdout, "failed to post issue: %s", err)
-			}
 		} else {
 			// Tell the cluster that, from now on, it will be run "on behalf of this
 			// test".
@@ -628,7 +621,7 @@ func (r *testRunner) runWorker(
 			wStatus.SetTest(t, testToRun)
 			wStatus.SetStatus("running test")
 
-			err = r.runTest(ctx, t, testToRun.runNum, testToRun.runCount, c, stdout, testL, github)
+			err = r.runTest(ctx, t, testToRun.runNum, testToRun.runCount, c, stdout, testL)
 		}
 
 		if err != nil {
@@ -741,7 +734,6 @@ func (r *testRunner) runTest(
 	c *clusterImpl,
 	stdout io.Writer,
 	l *logger.Logger,
-	github *githubIssues,
 ) error {
 	if t.Spec().(*registry.TestSpec).Skip != "" {
 		return fmt.Errorf("can't run skipped test: %s: %s", t.Name(), t.Spec().(*registry.TestSpec).Skip)
@@ -791,10 +783,6 @@ func (r *testRunner) runTest(
 			}
 
 			shout(ctx, l, stdout, "--- FAIL: %s (%s)\n%s", runID, durationStr, output)
-
-			if err := github.MaybePost(t, output); err != nil {
-				shout(ctx, l, stdout, "failed to post issue: %s", err)
-			}
 		} else {
 			shout(ctx, l, stdout, "--- PASS: %s (%s)", runID, durationStr)
 			// If `##teamcity[testFailed ...]` is not present before `##teamCity[testFinished ...]`,
@@ -1084,7 +1072,6 @@ func callerName() string {
 func (r *testRunner) generateReport() string {
 	r.status.Lock()
 	defer r.status.Unlock()
-	postSlackReport(r.status.pass, r.status.fail, r.status.skip)
 
 	fails := len(r.status.fail)
 	var msg string

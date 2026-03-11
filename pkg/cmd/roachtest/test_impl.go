@@ -378,32 +378,12 @@ func (t *testImpl) failedRLocked() bool {
 	return len(t.mu.failures) > 0
 }
 
-func (t *testImpl) firstFailure() failure {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-	if len(t.mu.failures) <= 0 {
-		return failure{}
-	}
-	return t.mu.failures[0]
-}
-
 func (t *testImpl) failureMsg() string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	var b strings.Builder
 	formatFailure(&b, t.mu.failures...)
 	return b.String()
-}
-
-// failureContainsError returns true if any of the errors in a given failure
-// matches the reference error
-func failureContainsError(f failure, refError error) bool {
-	for _, err := range f.errors {
-		if errors.Is(err, refError) {
-			return true
-		}
-	}
-	return errors.Is(f.squashedErr, refError)
 }
 
 func (t *testImpl) ArtifactsDir() string {

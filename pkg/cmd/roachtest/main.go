@@ -233,8 +233,6 @@ runner itself.
 	// local checkout.
 	runCmd.Flags().StringVar(
 		&buildTag, "build-tag", "", "build tag (auto-detect if empty)")
-	runCmd.Flags().StringVar(
-		&slackToken, "slack-token", "", "Slack bot token")
 	runCmd.Flags().BoolVar(
 		&teamCity, "teamcity", false, "include teamcity-specific markers in output")
 	runCmd.Flags().BoolVar(

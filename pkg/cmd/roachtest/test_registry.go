@@ -22,18 +22,9 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/registry"
 	"github.com/cockroachdb/cockroach/pkg/cmd/roachtest/spec"
-	"github.com/cockroachdb/cockroach/pkg/internal/team"
 	"github.com/cockroachdb/cockroach/pkg/util/version"
 	"github.com/cockroachdb/errors"
 )
-
-var loadTeams = func() (team.Map, error) {
-	return team.DefaultLoadTeams()
-}
-
-func ownerToAlias(o registry.Owner) team.Alias {
-	return team.Alias(fmt.Sprintf("cockroachdb/%s", o))
-}
 
 type testRegistryImpl struct {
 	m            map[string]*registry.TestSpec
@@ -119,13 +110,6 @@ func (r *testRegistryImpl) prepareSpec(spec *registry.TestSpec) error {
 	// failures and so the github issue poster knows who to assign it to.
 	if spec.Owner == `` {
 		return fmt.Errorf(`%s: unspecified owner`, spec.Name)
-	}
-	teams, err := loadTeams()
-	if err != nil {
-		return err
-	}
-	if _, ok := teams[ownerToAlias(spec.Owner)]; !ok {
-		return fmt.Errorf(`%s: unknown owner [%s]`, spec.Name, spec.Owner)
 	}
 	if len(spec.Tags) == 0 {
 		spec.Tags = []string{registry.DefaultTag}
