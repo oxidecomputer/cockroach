@@ -1652,8 +1652,8 @@ github.com/openzipkin/zipkin-go v0.2.2/go.mod h1:NaW6tEwdmWMaCDZzg8sh+IBNOxHMPnh
 github.com/openzipkin/zipkin-go v0.2.5 h1:UwtQQx2pyPIgWYHRg+epgdx1/HnBQTgN3/oIYEJTQzU=
 github.com/openzipkin/zipkin-go v0.2.5/go.mod h1:KpXfKdgRDnnhsxw4pNIH9Md5lyFqKUa4YDFlwRYAMyE=
 github.com/ory/dockertest/v3 v3.6.0/go.mod h1:4ZOpj8qBUmh8fcBSVzkH2bws2s91JdGvHUqan4GHEuQ=
-github.com/oxidecomputer/pebble v0.0.0-20260311024623-1c81133fd2ce h1:WNc6VMKWBraM127lp4JJLoT41boazKbOGmsf2NNeG6o=
-github.com/oxidecomputer/pebble v0.0.0-20260311024623-1c81133fd2ce/go.mod h1:BGr3GoNCmxixRPF0k+ZZwFdzP2gJS+2n//1l58cu28I=
+github.com/oxidecomputer/pebble v0.0.0-20260311024623-06125d28ca5b h1:3gGSR8revXO9GVsrVgU8ffJ9rZdttxoYiTkwHA1KGIA=
+github.com/oxidecomputer/pebble v0.0.0-20260311024623-06125d28ca5b/go.mod h1:BGr3GoNCmxixRPF0k+ZZwFdzP2gJS+2n//1l58cu28I=
 github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c/go.mod h1:X07ZCGwUbLaax7L0S3Tw4hpejzu63ZrrQiUe6W0hcy0=
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
