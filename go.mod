@@ -5,7 +5,6 @@ go 1.22.1
 toolchain go1.22.11
 
 require (
-	cloud.google.com/go/kms v1.1.0
 	cloud.google.com/go/storage v1.21.0
 	github.com/Azure/azure-sdk-for-go v57.1.0+incompatible
 	github.com/Azure/azure-storage-blob-go v0.14.0
