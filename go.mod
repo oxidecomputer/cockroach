@@ -295,7 +295,7 @@ require (
 
 require (
 	github.com/Azure/go-autorest/autorest/azure/cli v0.4.3 // indirect
-	github.com/DataDog/zstd v1.5.0 // indirect
+	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/dgryski/go-metro v0.0.0-20180109044635-280f6062b5bc // indirect
@@ -329,3 +329,5 @@ replace gopkg.in/yaml.v2 => github.com/cockroachdb/yaml v0.0.0-20210825132133-2d
 replace go.etcd.io/etcd/pkg/v3 => go.etcd.io/etcd/pkg/v3 v3.0.0-20201109164711-01844fd28560
 
 replace github.com/docker/docker => github.com/moby/moby v20.10.6+incompatible
+
+replace github.com/cockroachdb/pebble => github.com/oxidecomputer/pebble v0.0.0-20260311024623-1c81133fd2ce
