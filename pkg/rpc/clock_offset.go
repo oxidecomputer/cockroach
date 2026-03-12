@@ -252,6 +252,8 @@ func (r *RemoteClockMonitor) VerifyClockOffset(ctx context.Context) error {
 			offsets = append(offsets, float64(offset.Offset-offset.Uncertainty))
 			if offset.isHealthy(ctx, maxOffset) {
 				healthyOffsetCount++
+			} else {
+				log.Health.Errorf(ctx, "node %s is not healthy: clock offset is %s", addr, offset)
 			}
 		}
 		numClocks := len(r.mu.offsets)
