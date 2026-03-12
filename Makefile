@@ -36,9 +36,6 @@ override xgo := GOFLAGS= $(GO)
 # first thing below, and Make needs to know how to build it.
 .SECONDARY: build/defs.mk
 build/defs.mk: Makefile build/defs.mk.sig
-ifndef IGNORE_GOVERS
-	@GOFLAGS= build/go-version-check.sh $(GO) || { echo "Disable this check with IGNORE_GOVERS=1." >&2; exit 1; }
-endif
 	@echo "macos-version = $$(sw_vers -productVersion 2>/dev/null | grep -oE '[0-9]+\.[0-9]+')" > $@.tmp
 	@echo "GOEXE = $$($(xgo) env GOEXE)" >> $@.tmp
 	@echo "NCPUS = $$({ getconf _NPROCESSORS_ONLN || sysctl -n hw.ncpu || nproc; } 2>/dev/null)" >> $@.tmp
@@ -954,19 +951,6 @@ stressrace: ## Run tests under stress with the race detector enabled.
 stress stressrace:
 	$(xgo) test $(GOTESTFLAGS) $(GOFLAGS) $(GOMODVENDORFLAGS) -exec 'stress $(STRESSFLAGS)' -tags '$(TAGS)' -ldflags '$(LINKFLAGS)' -run "$(TESTS)" -timeout 0 $(PKG) $(filter-out -v,$(TESTFLAGS)) -v -args -test.timeout $(TESTTIMEOUT)
 
-.PHONY: roachprod-stress roachprod-stressrace
-roachprod-stress roachprod-stressrace: bin/roachprod-stress
-	# The bootstrap target creates, among other things, ./bin/stress.
-	@if [ -z "$(CLUSTER)" ]; then \
-		echo "ERROR: missing or empty CLUSTER; create one via:"; \
-		echo "roachprod create \$$USER-stress -n 20 --gce-machine-type=n1-standard-8 --local-ssd=false"; \
-		exit 1; \
-	fi
-	build/builder.sh make bin/.bootstrap
-	build/builder.sh mkrelease amd64-linux-gnu test GOFLAGS="$(GOFLAGS)" TESTFLAGS="-v -c -o $(notdir $(patsubst %/,%,$(PKG))).test" PKG=$(PKG) TAGS="$(TAGS)"
-	bin/roachprod-stress $(CLUSTER) $(patsubst github.com/cockroachdb/cockroach/%,./%,$(PKG)) $(STRESSFLAGS) -- \
-	  -test.run "$(TESTS)" $(filter-out -v,$(TESTFLAGS)) -test.v -test.timeout $(TESTTIMEOUT); \
-
 testlogic: testbaselogic testoptlogic
 
 testbaselogic: ## Run SQL Logic Tests.
@@ -1657,13 +1641,6 @@ bin/prereqs: ./pkg/cmd/prereqs/*.go vendor/modules.txt
 fuzz: ## Run fuzz tests.
 fuzz: bin/fuzz
 	bin/fuzz $(TESTFLAGS) -tests $(TESTS) -timeout $(TESTTIMEOUT) $(PKG)
-
-# Short hand to re-generate all bazel BUILD files. (Does the same thing as
-# `./dev generate bazel`.)
-.PHONY: bazel-generate
-bazel-generate:
-	@echo 'Generating DEPS.bzl and BUILD files using gazelle'
-	./build/bazelutil/bazel-generate.sh
 
 # No need to include all the dependency files if the user is just
 # requesting help or cleanup.
