@@ -147,6 +147,7 @@ func TestTransientClusterSimulateLatencies(t *testing.T) {
 	// Set up an empty 9-node cluster with simulated latencies.
 	demoCtx.SimulateLatency = true
 	demoCtx.NumNodes = 9
+	demoCtx.Localities = defaultLocalities
 
 	certsDir, err := ioutil.TempDir("", "cli-demo-test")
 	require.NoError(t, err)

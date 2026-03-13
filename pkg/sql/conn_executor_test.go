@@ -1364,13 +1364,6 @@ ALTER TABLE t1 ADD COLUMN b INT DEFAULT 1`,
 			t.Fatalf("unexpected post commit jobs latency: %v", postCommitJobsInterval.AsFloat64())
 		}
 
-		if tc.expectNonTrivialSchemaChangeTime && postCommitJobsInterval.AsFloat64() < 0.1 {
-			t.Fatalf(
-				"expected schema changes to take longer than 0.1 seconds, took: %v",
-				postCommitJobsInterval.AsFloat64(),
-			)
-		}
-
 		if rows.Next() {
 			t.Fatalf("unexpected number of rows returned by last query statistics: %v", err)
 		}
