@@ -2,7 +2,7 @@
 #:
 #: name = "test-linux"
 #: variety = "basic"
-#: target = "ubuntu-22.04-large"
+#: target = "ubuntu-22.04"
 
 set -o errexit
 set -o pipefail
