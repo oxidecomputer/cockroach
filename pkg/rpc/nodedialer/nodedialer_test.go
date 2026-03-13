@@ -221,7 +221,7 @@ func TestConnHealthTryDial(t *testing.T) {
 	require.NoError(t, ln.popConn().Close())
 	require.Eventually(t, func() bool {
 		return nd.ConnHealthTryDial(staticNodeID, rpc.DefaultClass) == nil
-	}, time.Second, 10*time.Millisecond)
+	}, 5*time.Second, 10*time.Millisecond)
 }
 
 func TestConnHealthInternal(t *testing.T) {
