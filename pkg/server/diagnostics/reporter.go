@@ -354,7 +354,7 @@ func (r *Reporter) buildReportingURL(report *diagnosticspb.DiagnosticReport) *ur
 		IsInternal:       sql.ClusterIsInternal(&r.Settings.SV),
 	}
 
-	url := reportingURL
+	var url *url.URL
 	if r.TestingKnobs != nil && r.TestingKnobs.OverrideReportingURL != nil {
 		url = *r.TestingKnobs.OverrideReportingURL
 	}

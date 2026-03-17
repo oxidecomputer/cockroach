@@ -205,7 +205,7 @@ func (u *UpdateChecker) buildUpdatesURL(ctx context.Context) *url.URL {
 		Uptime:        int64(timeutil.Since(u.StartTime).Seconds()),
 	}
 
-	url := updatesURL
+	var url *url.URL
 	if u.TestingKnobs != nil && u.TestingKnobs.OverrideUpdatesURL != nil {
 		url = *u.TestingKnobs.OverrideUpdatesURL
 	}

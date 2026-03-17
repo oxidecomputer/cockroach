@@ -20,7 +20,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/server/diagnostics/diagnosticspb"
 	"github.com/cockroachdb/cockroach/pkg/util/cloudinfo"
-	"github.com/cockroachdb/cockroach/pkg/util/envutil"
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/cockroach/pkg/util/system"
 	"github.com/cockroachdb/cockroach/pkg/util/uuid"
@@ -29,34 +28,6 @@ import (
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 )
-
-// updatesURL is the URL used to check for new versions. Can be nil if an empty
-// URL is set.
-var updatesURL *url.URL
-
-const defaultUpdatesURL = `https://register.cockroachdb.com/api/clusters/updates`
-
-// reportingURL is the URL used to report diagnostics/telemetry. Can be nil if
-// an empty URL is set.
-var reportingURL *url.URL
-
-const defaultReportingURL = `https://register.cockroachdb.com/api/clusters/report`
-
-func init() {
-	var err error
-	updatesURL, err = url.Parse(
-		envutil.EnvOrDefaultString("COCKROACH_UPDATE_CHECK_URL", defaultUpdatesURL),
-	)
-	if err != nil {
-		panic(err)
-	}
-	reportingURL, err = url.Parse(
-		envutil.EnvOrDefaultString("COCKROACH_USAGE_REPORT_URL", defaultReportingURL),
-	)
-	if err != nil {
-		panic(err)
-	}
-}
 
 // TestingKnobs groups testing knobs for diagnostics.
 type TestingKnobs struct {
