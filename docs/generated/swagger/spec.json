@@ -1007,7 +1007,7 @@
       "x-go-package": "github.com/cockroachdb/cockroach/pkg/server/serverpb"
     },
     "GCPolicy": {
-      "description": "TODO(spencer): flesh this out to include maximum number of values\nas well as whether there's an intersection between max values\nand TTL or a union.",
+      "description": "TODO(spencer): flesh this out to include maximum number of values\n\nas well as whether there's an intersection between max values\nand TTL or a union.",
       "type": "object",
       "title": "GCPolicy defines garbage collection policies which apply to MVCC\nvalues within a zone.",
       "properties": {
@@ -1803,7 +1803,7 @@
           "$ref": "#/definitions/GCPolicy"
         },
         "global_reads": {
-          "description": "GlobalReads specifies whether transactions operating over the range(s)\nshould be configured to provide non-blocking behavior, meaning that reads\ncan be served consistently from all replicas and do not block on writes. In\nexchange, writes get pushed into the future and must wait on commit to\nensure linearizability. For more, see:\nhttps://github.com/cockroachdb/cockroach/blob/master/docs/RFCS/20200811_non_blocking_txns.md",
+          "description": "GlobalReads specifies whether transactions operating over the range(s)\nshould be configured to provide non-blocking behavior, meaning that reads\ncan be served consistently from all replicas and do not block on writes. In\nexchange, writes get pushed into the future and must wait on commit to\nensure linearizability. For more, see:\n\nhttps://github.com/cockroachdb/cockroach/blob/master/docs/RFCS/20200811_non_blocking_txns.md",
           "type": "boolean",
           "x-go-name": "GlobalReads"
         },
