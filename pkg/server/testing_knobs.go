@@ -19,7 +19,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/liveness/livenesspb"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/rpc"
-	"github.com/cockroachdb/cockroach/pkg/server/diagnostics"
 )
 
 // TestingKnobs groups testing knobs for the Server.
@@ -42,8 +41,6 @@ type TestingKnobs struct {
 	PauseAfterGettingRPCAddress chan struct{}
 	// ContextTestingKnobs allows customization of the RPC context testing knobs.
 	ContextTestingKnobs rpc.ContextTestingKnobs
-	// DiagnosticsTestingKnobs allows customization of diagnostics testing knobs.
-	DiagnosticsTestingKnobs diagnostics.TestingKnobs
 
 	// If set, use this listener for RPC (and possibly SQL, depending on
 	// the SplitListenSQL setting), instead of binding a new listener.

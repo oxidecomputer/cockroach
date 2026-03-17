@@ -1596,13 +1596,6 @@ func (s *Server) PGServer() *pgwire.Server {
 	return s.sqlServer.pgServer
 }
 
-// StartDiagnostics starts periodic diagnostics reporting and update checking.
-// NOTE: This is not called in PreStart so that it's disabled by default for
-// testing.
-func (s *Server) StartDiagnostics(ctx context.Context) {
-	s.sqlServer.StartDiagnostics(ctx)
-}
-
 func init() {
 	tracing.RegisterTagRemapping("n", "node")
 }

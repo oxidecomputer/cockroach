@@ -489,14 +489,6 @@ func (c *transientCluster) Start(
 			}
 		}
 
-		// Start up the update check loop.
-		// We don't do this in (*server.Server).Start() because we don't want this
-		// overhead and possible interference in tests.
-		if !c.demoCtx.DisableTelemetry {
-			c.infoLog(ctx, "starting telemetry")
-			c.firstServer.StartDiagnostics(ctx)
-		}
-
 		return nil
 	}(phaseCtx); err != nil {
 		return err

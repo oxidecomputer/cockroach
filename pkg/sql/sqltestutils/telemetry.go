@@ -23,13 +23,13 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/base"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
-	"github.com/cockroachdb/cockroach/pkg/server"
 	"github.com/cockroachdb/cockroach/pkg/server/diagnostics"
+	"github.com/cockroachdb/cockroach/pkg/server/diagnostics/diagnosticspb"
+	"github.com/cockroachdb/cockroach/pkg/server/telemetry"
 	"github.com/cockroachdb/cockroach/pkg/sql"
 	"github.com/cockroachdb/cockroach/pkg/sql/catalog/catconstants"
 	"github.com/cockroachdb/cockroach/pkg/sql/catalog/descpb"
 	"github.com/cockroachdb/cockroach/pkg/testutils"
-	"github.com/cockroachdb/cockroach/pkg/testutils/diagutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/serverutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/sqlutils"
 	"github.com/cockroachdb/cockroach/pkg/util/cloudinfo"
@@ -95,7 +95,12 @@ func TelemetryTest(t *testing.T, serverArgs []base.TestServerArgs) {
 			datadriven.RunTest(t, path, func(t *testing.T, td *datadriven.TestData) string {
 				sqlServer := test.server.SQLServer().(*sql.Server)
 				reporter := test.server.DiagnosticsReporter().(*diagnostics.Reporter)
-				return test.RunTest(td, test.serverDB, reporter.ReportDiagnostics, sqlServer)
+				createReport := func(ctx context.Context) *diagnosticspb.DiagnosticReport {
+					report := reporter.CreateReport(ctx, telemetry.ResetCounts)
+					sqlServer.GetReportedSQLStatsController().ResetLocalSQLStats(ctx)
+					return report
+				}
+				return test.RunTest(td, test.serverDB, createReport, sqlServer)
 			})
 		})
 	})
@@ -103,7 +108,6 @@ func TelemetryTest(t *testing.T, serverArgs []base.TestServerArgs) {
 
 type telemetryTest struct {
 	t              *testing.T
-	diagSrv        *diagutils.Server
 	cluster        serverutils.TestClusterInterface
 	server         serverutils.TestServerInterface
 	serverDB       *gosql.DB
@@ -121,19 +125,12 @@ type rewrite struct {
 
 func (tt *telemetryTest) Start(t *testing.T, serverArgs []base.TestServerArgs) {
 	tt.t = t
-	tt.diagSrv = diagutils.NewServer()
 
 	var tempExternalIODir string
 	tempExternalIODir, tt.tempDirCleanup = testutils.TempDir(tt.t)
 
-	diagSrvURL := tt.diagSrv.URL()
 	mapServerArgs := make(map[int]base.TestServerArgs, len(serverArgs))
 	for i, v := range serverArgs {
-		v.Knobs.Server = &server.TestingKnobs{
-			DiagnosticsTestingKnobs: diagnostics.TestingKnobs{
-				OverrideReportingURL: &diagSrvURL,
-			},
-		}
 		v.ExternalIODir = tempExternalIODir
 		mapServerArgs[i] = v
 	}
@@ -149,14 +146,13 @@ func (tt *telemetryTest) Start(t *testing.T, serverArgs []base.TestServerArgs) {
 
 func (tt *telemetryTest) Close() {
 	tt.cluster.Stopper().Stop(context.Background())
-	tt.diagSrv.Close()
 	tt.tempDirCleanup()
 }
 
 func (tt *telemetryTest) RunTest(
 	td *datadriven.TestData,
 	db *gosql.DB,
-	reportDiags func(ctx context.Context),
+	createReport func(ctx context.Context) *diagnosticspb.DiagnosticReport,
 	sqlServer *sql.Server,
 ) (out string) {
 	defer func() {
@@ -182,8 +178,7 @@ func (tt *telemetryTest) RunTest(
 		return ""
 
 	case "schema":
-		reportDiags(ctx)
-		last := tt.diagSrv.LastRequestData()
+		last := createReport(ctx)
 		var buf bytes.Buffer
 		for i := range last.Schema {
 			buf.WriteString(formatTableDescriptor(&last.Schema[i]))
@@ -200,14 +195,13 @@ func (tt *telemetryTest) RunTest(
 
 	case "feature-usage", "feature-counters":
 		// Report diagnostics once to reset the counters.
-		reportDiags(ctx)
+		createReport(ctx)
 		_, err := db.Exec(td.Input)
 		var buf bytes.Buffer
 		if err != nil {
 			fmt.Fprintf(&buf, "error: %v\n", err)
 		}
-		reportDiags(ctx)
-		last := tt.diagSrv.LastRequestData()
+		last := createReport(ctx)
 		usage := last.FeatureUsage
 		keys := make([]string, 0, len(usage))
 		for k, v := range usage {
@@ -237,7 +231,7 @@ func (tt *telemetryTest) RunTest(
 	case "sql-stats":
 		// Report diagnostics once to reset the stats.
 		sqlServer.GetSQLStatsController().ResetLocalSQLStats(ctx)
-		reportDiags(ctx)
+		createReport(ctx)
 
 		_, err := db.Exec(td.Input)
 		var buf bytes.Buffer
@@ -245,8 +239,7 @@ func (tt *telemetryTest) RunTest(
 			fmt.Fprintf(&buf, "error: %v\n", err)
 		}
 		sqlServer.GetSQLStatsController().ResetLocalSQLStats(ctx)
-		reportDiags(ctx)
-		last := tt.diagSrv.LastRequestData()
+		last := createReport(ctx)
 		buf.WriteString(formatSQLStats(last.SqlStats))
 		return buf.String()
 

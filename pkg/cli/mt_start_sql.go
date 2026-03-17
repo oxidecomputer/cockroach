@@ -20,7 +20,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/cli/clierrorplus"
 	"github.com/cockroachdb/cockroach/pkg/clusterversion"
 	"github.com/cockroachdb/cockroach/pkg/server"
-	"github.com/cockroachdb/cockroach/pkg/settings/cluster"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
 	"github.com/cockroachdb/cockroach/pkg/util/sdnotify"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
@@ -150,13 +149,6 @@ func runStartSQL(cmd *cobra.Command, args []string) error {
 	// --background or under systemd.
 	if err := sdnotify.Ready(); err != nil {
 		log.Ops.Errorf(ctx, "failed to signal readiness using systemd protocol: %s", err)
-	}
-
-	// Start up the diagnostics reporting loop.
-	// We don't do this in (*server.SQLServer).preStart() because we don't
-	// want this overhead and possible interference in tests.
-	if !cluster.TelemetryOptOut() {
-		sqlServer.StartDiagnostics(ctx)
 	}
 
 	tenantClusterID := sqlServer.LogicalClusterID()

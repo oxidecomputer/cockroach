@@ -12,83 +12,16 @@ package diagnostics
 
 import (
 	"context"
-	"math/rand"
-	"net/url"
-	"strconv"
-	"time"
 
-	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/server/diagnostics/diagnosticspb"
 	"github.com/cockroachdb/cockroach/pkg/util/cloudinfo"
 	"github.com/cockroachdb/cockroach/pkg/util/syncutil"
 	"github.com/cockroachdb/cockroach/pkg/util/system"
-	"github.com/cockroachdb/cockroach/pkg/util/uuid"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/load"
 	"github.com/shirou/gopsutil/v3/mem"
 )
-
-// TestingKnobs groups testing knobs for diagnostics.
-type TestingKnobs struct {
-	// OverrideReportingURL if set, overrides the URL used to report diagnostics.
-	// It is a pointer to pointer to allow overriding to the nil URL.
-	OverrideReportingURL **url.URL
-}
-
-// ClusterInfo contains cluster information that will become part of URLs.
-type ClusterInfo struct {
-	StorageClusterID uuid.UUID
-	LogicalClusterID uuid.UUID
-	TenantID         roachpb.TenantID
-	IsInsecure       bool
-	IsInternal       bool
-}
-
-// addInfoToURL sets query parameters on the URL used to report diagnostics. If
-// this is a CRDB node, then nodeInfo is filled (and nodeInfo.NodeID is
-// non-zero). Otherwise, this is a SQL-only tenant and sqlInfo is filled.
-func addInfoToURL(
-	url *url.URL,
-	clusterInfo *ClusterInfo,
-	env *diagnosticspb.Environment,
-	nodeID roachpb.NodeID,
-	sqlInfo *diagnosticspb.SQLInstanceInfo,
-) *url.URL {
-	if url == nil {
-		return nil
-	}
-	result := *url
-	q := result.Query()
-
-	// Don't set nodeid if this is a SQL-only instance.
-	if nodeID != 0 {
-		q.Set("nodeid", strconv.Itoa(int(nodeID)))
-	}
-
-	b := env.Build
-	q.Set("sqlid", strconv.Itoa(int(sqlInfo.SQLInstanceID)))
-	q.Set("uptime", strconv.Itoa(int(sqlInfo.Uptime)))
-	q.Set("licensetype", env.LicenseType)
-	q.Set("version", b.Tag)
-	q.Set("platform", b.Platform)
-	q.Set("uuid", clusterInfo.StorageClusterID.String())
-	q.Set("logical_uuid", clusterInfo.LogicalClusterID.String())
-	q.Set("tenantid", clusterInfo.TenantID.String())
-	q.Set("insecure", strconv.FormatBool(clusterInfo.IsInsecure))
-	q.Set("internal", strconv.FormatBool(clusterInfo.IsInternal))
-	q.Set("buildchannel", b.Channel)
-	q.Set("envchannel", b.EnvChannel)
-	result.RawQuery = q.Encode()
-	return &result
-}
-
-// randomly shift `d` to be up to `jitterSeconds` shorter or longer.
-func addJitter(d time.Duration) time.Duration {
-	const jitterSeconds = 120
-	j := time.Duration(rand.Intn(jitterSeconds*2)-jitterSeconds) * time.Second
-	return d + j
-}
 
 var populateMutex syncutil.Mutex
 

@@ -68,11 +68,6 @@ type OverridesInformer interface {
 	IsOverridden(settingName string) bool
 }
 
-// TelemetryOptOut is a place for controlling whether to opt out of telemetry or not.
-func TelemetryOptOut() bool {
-	return true
-}
-
 // NoSettings is used when a func requires a Settings but none is available
 // (for example, a CLI subcommand that does not connect to a cluster).
 var NoSettings *Settings // = nil

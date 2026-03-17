@@ -11,11 +11,7 @@
 package diagnostics
 
 import (
-	"bytes"
 	"context"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"reflect"
 	"time"
 
@@ -35,13 +31,9 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/sql/catalog/descpb"
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
 	"github.com/cockroachdb/cockroach/pkg/sql/sessiondata"
-	"github.com/cockroachdb/cockroach/pkg/util/httputil"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
-	"github.com/cockroachdb/cockroach/pkg/util/log/logcrash"
 	"github.com/cockroachdb/cockroach/pkg/util/protoutil"
-	"github.com/cockroachdb/cockroach/pkg/util/stop"
 	"github.com/cockroachdb/cockroach/pkg/util/timeutil"
-	"github.com/cockroachdb/cockroach/pkg/util/uuid"
 	"github.com/cockroachdb/errors"
 	"github.com/mitchellh/reflectwalk"
 	"google.golang.org/protobuf/proto"
@@ -56,29 +48,20 @@ type NodeStatusGenerator interface {
 	GenerateNodeStatus(ctx context.Context) *statuspb.NodeStatus
 }
 
-var reportFrequency = settings.RegisterDurationSetting(
+var _ = settings.RegisterDurationSetting(
 	settings.TenantWritable,
 	"diagnostics.reporting.interval",
-	"interval at which diagnostics data should be reported",
+	"interval at which diagnostics data should be reported (this setting does nothing; diagnostics reporting has been removed)",
 	time.Hour,
 	settings.NonNegativeDuration,
 ).WithPublic()
 
 // Reporter is a helper struct that phones home to report usage and diagnostics.
 type Reporter struct {
-	StartTime  time.Time
-	AmbientCtx *log.AmbientContext
-	Config     *base.Config
-	Settings   *cluster.Settings
+	StartTime time.Time
+	Settings  *cluster.Settings
 
-	// StorageClusterID is the cluster ID of the underlying storage
-	// cluster. It is not yet available at the time the reporter is
-	// created, so instead initialize with a function that gets it
-	// dynamically.
-	StorageClusterID func() uuid.UUID
-	TenantID         roachpb.TenantID
-	// LogicalClusterID is the tenant-specific logical cluster ID.
-	LogicalClusterID func() uuid.UUID
+	TenantID roachpb.TenantID
 
 	// SQLInstanceID is not yet available at the time the reporter is created,
 	// so instead initialize with a function that gets it dynamically.
@@ -90,81 +73,6 @@ type Reporter struct {
 
 	// Locality is a description of the topography of the server.
 	Locality roachpb.Locality
-
-	// TestingKnobs is used for internal test controls only.
-	TestingKnobs *TestingKnobs
-}
-
-// PeriodicallyReportDiagnostics starts a background worker that periodically
-// phones home to report usage and diagnostics.
-func (r *Reporter) PeriodicallyReportDiagnostics(ctx context.Context, stopper *stop.Stopper) {
-	_ = stopper.RunAsyncTaskEx(ctx, stop.TaskOpts{TaskName: "diagnostics", SpanOpt: stop.SterileRootSpan}, func(ctx context.Context) {
-		defer logcrash.RecoverAndReportNonfatalPanic(ctx, &r.Settings.SV)
-		nextReport := r.StartTime
-
-		var timer timeutil.Timer
-		defer timer.Stop()
-		for {
-			// TODO(dt): we should allow tuning the reset and report intervals separately.
-			// Consider something like rand.Float() > resetFreq/reportFreq here to sample
-			// stat reset periods for reporting.
-			if logcrash.DiagnosticsReportingEnabled.Get(&r.Settings.SV) {
-				r.ReportDiagnostics(ctx)
-			}
-
-			nextReport = nextReport.Add(reportFrequency.Get(&r.Settings.SV))
-
-			timer.Reset(addJitter(nextReport.Sub(timeutil.Now())))
-			select {
-			case <-stopper.ShouldQuiesce():
-				return
-			case <-timer.C:
-				timer.Read = true
-			}
-		}
-	})
-}
-
-// ReportDiagnostics phones home to report usage and diagnostics.
-//
-// NOTE: This can be slow because of cloud detection; use cloudinfo.Disable() in
-// tests to avoid that.
-func (r *Reporter) ReportDiagnostics(ctx context.Context) {
-	ctx, span := r.AmbientCtx.AnnotateCtxWithSpan(ctx, "usageReport")
-	defer span.Finish()
-
-	report := r.CreateReport(ctx, telemetry.ResetCounts)
-
-	url := r.buildReportingURL(report)
-	if url == nil {
-		return
-	}
-
-	b, err := protoutil.Marshal(report)
-	if err != nil {
-		log.Warningf(ctx, "%v", err)
-		return
-	}
-
-	res, err := httputil.Post(
-		ctx, url.String(), "application/x-protobuf", bytes.NewReader(b),
-	)
-	if err != nil {
-		if log.V(2) {
-			// This is probably going to be relatively common in production
-			// environments where network access is usually curtailed.
-			log.Warningf(ctx, "failed to report node usage metrics: %v", err)
-		}
-		return
-	}
-	defer res.Body.Close()
-	b, err = ioutil.ReadAll(res.Body)
-	if err != nil || res.StatusCode != http.StatusOK {
-		log.Warningf(ctx, "failed to report node usage metrics: status: %s, body: %s, "+
-			"error: %v", res.Status, b, err)
-		return
-	}
-	r.SQLServer.GetReportedSQLStatsController().ResetLocalSQLStats(ctx)
 }
 
 // CreateReport generates a new diagnostics report containing information about
@@ -341,24 +249,6 @@ func (r *Reporter) collectSchemaInfo(ctx context.Context) ([]descpb.TableDescrip
 		}
 	}
 	return tables, nil
-}
-
-// buildReportingURL creates a URL to report diagnostics.
-// If an empty updates URL is set (via empty environment variable), returns nil.
-func (r *Reporter) buildReportingURL(report *diagnosticspb.DiagnosticReport) *url.URL {
-	clusterInfo := ClusterInfo{
-		StorageClusterID: r.StorageClusterID(),
-		LogicalClusterID: r.LogicalClusterID(),
-		TenantID:         r.TenantID,
-		IsInsecure:       r.Config.Insecure,
-		IsInternal:       sql.ClusterIsInternal(&r.Settings.SV),
-	}
-
-	var url *url.URL
-	if r.TestingKnobs != nil && r.TestingKnobs.OverrideReportingURL != nil {
-		url = *r.TestingKnobs.OverrideReportingURL
-	}
-	return addInfoToURL(url, &clusterInfo, &report.Env, report.Node.NodeID, &report.SQL)
 }
 
 func getLicenseType(ctx context.Context, settings *cluster.Settings) string {

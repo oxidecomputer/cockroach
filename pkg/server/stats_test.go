@@ -19,7 +19,6 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/base"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
-	"github.com/cockroachdb/cockroach/pkg/server/diagnostics"
 	"github.com/cockroachdb/cockroach/pkg/server/serverpb"
 	"github.com/cockroachdb/cockroach/pkg/settings/cluster"
 	"github.com/cockroachdb/cockroach/pkg/sql"
@@ -27,7 +26,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/sql/sqlstats/persistedsqlstats"
 	"github.com/cockroachdb/cockroach/pkg/sql/tests"
 	"github.com/cockroachdb/cockroach/pkg/testutils"
-	"github.com/cockroachdb/cockroach/pkg/testutils/diagutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/serverutils"
 	"github.com/cockroachdb/cockroach/pkg/testutils/sqlutils"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
@@ -45,16 +43,6 @@ func TestTelemetrySQLStatsIndependence(t *testing.T) {
 	params.Knobs = base.TestingKnobs{
 		SQLStatsKnobs: &sqlstats.TestingKnobs{
 			AOSTClause: "AS OF SYSTEM TIME '-1us'",
-		},
-	}
-
-	r := diagutils.NewServer()
-	defer r.Close()
-
-	url := r.URL()
-	params.Knobs.Server = &TestingKnobs{
-		DiagnosticsTestingKnobs: diagnostics.TestingKnobs{
-			OverrideReportingURL: &url,
 		},
 	}
 
@@ -79,11 +67,11 @@ CREATE TABLE t.test (x INT PRIMARY KEY);
 	if _, err := sqlDB.Exec(`INSERT INTO t.test VALUES ($1)`, 1); err != nil {
 		t.Fatal(err)
 	}
-	s.DiagnosticsReporter().(*diagnostics.Reporter).ReportDiagnostics(ctx)
+	sqlServer.GetReportedSQLStatsController().ResetLocalSQLStats(ctx)
 	if _, err := sqlDB.Exec(`INSERT INTO t.test VALUES ($1)`, 2); err != nil {
 		t.Fatal(err)
 	}
-	s.DiagnosticsReporter().(*diagnostics.Reporter).ReportDiagnostics(ctx)
+	sqlServer.GetReportedSQLStatsController().ResetLocalSQLStats(ctx)
 
 	// Ensure that our SQL statement data was not affected by the telemetry report.
 	stats, err := sqlServer.GetScrubbedStmtStats(ctx)

@@ -647,12 +647,6 @@ If problems persist, please see %s.`
 			serverStatusMu.started = true
 			serverStatusMu.Unlock()
 
-			// Start up the diagnostics reporting and update check loops.
-			// We don't do this in (*server.Server).Start() because we don't
-			// want this overhead and possible interference in tests.
-			if !cluster.TelemetryOptOut() {
-				s.StartDiagnostics(ctx)
-			}
 			initialStart := s.InitialStart()
 
 			// Run SQL for new clusters.

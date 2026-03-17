@@ -618,7 +618,6 @@ func setDemoContextDefaults() {
 	demoCtx.RunWorkload = false
 	demoCtx.Localities = nil
 	demoCtx.GeoPartitionedReplicas = false
-	demoCtx.DisableTelemetry = false
 	demoCtx.DefaultKeySize = defaultKeySize
 	demoCtx.DefaultCALifetime = defaultCALifetime
 	demoCtx.DefaultCertLifetime = defaultCertLifetime
