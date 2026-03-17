@@ -1082,7 +1082,6 @@ AND name != 'sql.defaults.use_declarative_schema_changer'
 ORDER BY name
 ----
 cluster.secret
-diagnostics.reporting.enabled
 kv.range_merge.queue_enabled
 sql.crdb_internal.table_row_statistics.as_of_time
 sql.stats.automatic_collection.min_stale_rows
@@ -1101,7 +1100,6 @@ AND name NOT LIKE '%sql.defaults.use_declarative_schema_changer%'
 ORDER BY name
 ----
 cluster.secret
-diagnostics.reporting.enabled
 sql.crdb_internal.table_row_statistics.as_of_time
 sql.stats.automatic_collection.min_stale_rows
 version
@@ -1121,7 +1119,6 @@ WHERE name NOT IN ('version', 'sql.defaults.distsql', 'cluster.secret',
   'sql.defaults.use_declarative_schema_changer')
 ORDER BY name
 ----
-diagnostics.reporting.enabled                      true
 kv.range_merge.queue_enabled                       false
 somesetting                                        somevalue
 sql.crdb_internal.table_row_statistics.as_of_time  -1µs
@@ -1136,7 +1133,6 @@ WHERE name NOT IN ('version', 'sql.defaults.distsql', 'cluster.secret',
   'sql.defaults.experimental_distsql_planning', 'sql.defaults.use_declarative_schema_changer')
 ORDER BY name
 ----
-diagnostics.reporting.enabled                      true
 somesetting                                        somevalue
 sql.crdb_internal.table_row_statistics.as_of_time  -1µs
 sql.stats.automatic_collection.min_stale_rows      5
