@@ -173,11 +173,6 @@ type TestServerInterface interface {
 	// inside the specified database.
 	ForceTableGC(ctx context.Context, database, table string, timestamp hlc.Timestamp) error
 
-	// UpdateChecker returns the server's *diagnostics.UpdateChecker as an
-	// interface{}. The UpdateChecker periodically phones home to check for new
-	// updates that are available.
-	UpdateChecker() interface{}
-
 	// StartTenant spawns off tenant process connecting to this TestServer.
 	StartTenant(ctx context.Context, params base.TestTenantArgs) (TestTenantInterface, error)
 

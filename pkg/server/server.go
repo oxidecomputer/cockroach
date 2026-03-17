@@ -43,7 +43,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/rpc"
 	"github.com/cockroachdb/cockroach/pkg/rpc/nodedialer"
 	"github.com/cockroachdb/cockroach/pkg/server/debug"
-	"github.com/cockroachdb/cockroach/pkg/server/diagnostics"
 	"github.com/cockroachdb/cockroach/pkg/server/serverpb"
 	"github.com/cockroachdb/cockroach/pkg/server/status"
 	"github.com/cockroachdb/cockroach/pkg/server/systemconfigwatcher"
@@ -112,7 +111,6 @@ type Server struct {
 	runtime          *status.RuntimeStatSampler
 	ruleRegistry     *metric.RuleRegistry
 	promRuleExporter *metric.PrometheusRuleExporter
-	updates          *diagnostics.UpdateChecker
 	ctSender         *sidetransport.Sender
 
 	http            *httpServer
@@ -655,21 +653,6 @@ func NewServer(cfg Config, stopper *stop.Stopper) (*Server, error) {
 	recorder := status.NewMetricsRecorder(clock, nodeLiveness, rpcContext, g, st)
 	registry.AddMetricStruct(rpcContext.RemoteClocks.Metrics())
 
-	updates := &diagnostics.UpdateChecker{
-		StartTime:        timeutil.Now(),
-		AmbientCtx:       &cfg.AmbientCtx,
-		Config:           cfg.BaseConfig.Config,
-		Settings:         cfg.Settings,
-		StorageClusterID: rpcContext.StorageClusterID.Get,
-		LogicalClusterID: rpcContext.LogicalClusterID.Get,
-		NodeID:           nodeIDContainer.Get,
-		SQLInstanceID:    idContainer.SQLInstanceID,
-	}
-
-	if cfg.TestingKnobs.Server != nil {
-		updates.TestingKnobs = &cfg.TestingKnobs.Server.(*TestingKnobs).DiagnosticsTestingKnobs
-	}
-
 	tenantUsage := NewTenantUsageServer(st, db, internalExecutor)
 	registry.AddMetricStruct(tenantUsage.Metrics())
 
@@ -838,7 +821,6 @@ func NewServer(cfg Config, stopper *stop.Stopper) (*Server, error) {
 		recorder:               recorder,
 		ruleRegistry:           ruleRegistry,
 		promRuleExporter:       promRuleExporter,
-		updates:                updates,
 		ctSender:               ctSender,
 		runtime:                runtimeSampler,
 		http:                   sHTTP,
@@ -1618,7 +1600,6 @@ func (s *Server) PGServer() *pgwire.Server {
 // NOTE: This is not called in PreStart so that it's disabled by default for
 // testing.
 func (s *Server) StartDiagnostics(ctx context.Context) {
-	s.updates.PeriodicallyCheckForUpdates(ctx, s.stopper)
 	s.sqlServer.StartDiagnostics(ctx)
 }
 

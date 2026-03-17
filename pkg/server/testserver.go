@@ -858,11 +858,6 @@ func (ts *TestServer) WriteSummaries() error {
 	return ts.node.writeNodeStatus(context.TODO(), time.Hour, false)
 }
 
-// UpdateChecker implements TestServerInterface.
-func (ts *TestServer) UpdateChecker() interface{} {
-	return ts.Server.updates
-}
-
 // DiagnosticsReporter implements TestServerInterface.
 func (ts *TestServer) DiagnosticsReporter() interface{} {
 	return ts.Server.sqlServer.diagnosticsReporter

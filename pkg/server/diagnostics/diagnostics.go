@@ -31,10 +31,6 @@ import (
 
 // TestingKnobs groups testing knobs for diagnostics.
 type TestingKnobs struct {
-	// OverrideUpdatesURL if set, overrides the URL used to check for new
-	// versions. It is a pointer to pointer to allow overriding to the nil URL.
-	OverrideUpdatesURL **url.URL
-
 	// OverrideReportingURL if set, overrides the URL used to report diagnostics.
 	// It is a pointer to pointer to allow overriding to the nil URL.
 	OverrideReportingURL **url.URL
