@@ -9,8 +9,10 @@ set -o pipefail
 set -o xtrace
 
 source .github/buildomat/linux-setup.sh
-gmake -j"$(nproc)" lint
 
-# verify go.mod is up to date
-go mod tidy
-git diff --exit-code
+failed=0
+gmake -j"$(nproc)" lint || ((++failed))
+gmake -j"$(nproc)" generate || ((++failed))
+go mod tidy || ((++failed))
+git diff --exit-code || ((++failed))
+((!failed)) || exit
