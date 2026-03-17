@@ -21,7 +21,6 @@ import { ThunkAction } from "redux-thunk";
 
 import { LocalSetting } from "./localsettings";
 import {
-  VERSION_DISMISSED_KEY,
   INSTRUCTIONS_BOX_COLLAPSED_KEY,
   saveUIData,
   loadUIData,
@@ -29,18 +28,9 @@ import {
   UIDataState,
   UIDataStatus,
 } from "./uiData";
-import {
-  refreshCluster,
-  refreshNodes,
-  refreshVersion,
-  refreshHealth,
-} from "./apiReducers";
-import {
-  singleVersionSelector,
-  numNodesByVersionsSelector,
-} from "src/redux/nodes";
+import { refreshCluster, refreshNodes, refreshHealth } from "./apiReducers";
+import { numNodesByVersionsSelector } from "src/redux/nodes";
 import { AdminUIState, AppDispatch } from "./state";
-import * as docsURL from "src/util/docs";
 
 export enum AlertLevel {
   NOTIFICATION,
@@ -161,99 +151,6 @@ export const staggeredVersionWarningSelector = createSelector(
       dismiss: (dispatch: AppDispatch) => {
         dispatch(staggeredVersionDismissedSetting.set(true));
         return Promise.resolve();
-      },
-    };
-  },
-);
-
-// A boolean that indicates whether the server has yet been checked for a
-// persistent dismissal of this notification.
-// TODO(mrtracy): Refactor so that we can distinguish "never loaded" from
-// "loaded, doesn't exist on server" without a separate selector.
-const newVersionDismissedPersistentLoadedSelector = createSelector(
-  (state: AdminUIState) => state.uiData,
-  uiData => uiData && _.has(uiData, VERSION_DISMISSED_KEY),
-);
-
-const newVersionDismissedPersistentSelector = createSelector(
-  (state: AdminUIState) => state.uiData,
-  uiData => {
-    return (
-      (uiData &&
-        uiData[VERSION_DISMISSED_KEY] &&
-        uiData[VERSION_DISMISSED_KEY].data &&
-        moment(uiData[VERSION_DISMISSED_KEY].data)) ||
-      moment(0)
-    );
-  },
-);
-
-export const newVersionDismissedLocalSetting = new LocalSetting(
-  "new_version_dismissed",
-  localSettingsSelector,
-  moment(0),
-);
-
-export const newerVersionsSelector = (state: AdminUIState) =>
-  state.cachedData.version.valid ? state.cachedData.version.data : null;
-
-/**
- * Notification when a new version of CockroachDB is available.
- */
-export const newVersionNotificationSelector = createSelector(
-  newerVersionsSelector,
-  newVersionDismissedPersistentLoadedSelector,
-  newVersionDismissedPersistentSelector,
-  newVersionDismissedLocalSetting.selector,
-  (
-    newerVersions,
-    newVersionDismissedPersistentLoaded,
-    newVersionDismissedPersistent,
-    newVersionDismissedLocal,
-  ): Alert => {
-    // Check if there are new versions available.
-    if (
-      !newerVersions ||
-      !newerVersions.details ||
-      newerVersions.details.length === 0
-    ) {
-      return undefined;
-    }
-
-    // Check local dismissal. Local dismissal is valid for one day.
-    const yesterday = moment().subtract(1, "day");
-    if (
-      newVersionDismissedLocal.isAfter &&
-      newVersionDismissedLocal.isAfter(yesterday)
-    ) {
-      return undefined;
-    }
-
-    // Check persistent dismissal, also valid for one day.
-    if (
-      !newVersionDismissedPersistentLoaded ||
-      !newVersionDismissedPersistent ||
-      newVersionDismissedPersistent.isAfter(yesterday)
-    ) {
-      return undefined;
-    }
-
-    return {
-      level: AlertLevel.NOTIFICATION,
-      title: "New Version Available",
-      text: "A new version of CockroachDB is available.",
-      link: docsURL.upgradeCockroachVersion,
-      dismiss: (dispatch: any) => {
-        const dismissedAt = moment();
-        // Dismiss locally.
-        dispatch(newVersionDismissedLocalSetting.set(dismissedAt));
-        // Dismiss persistently.
-        return dispatch(
-          saveUIData({
-            key: VERSION_DISMISSED_KEY,
-            value: dismissedAt.valueOf(),
-          }),
-        );
       },
     };
   },
@@ -532,7 +429,6 @@ export const overviewListAlertsSelector = createSelector(
  * page; currently, this includes all non-critical alerts.
  */
 export const panelAlertsSelector = createSelector(
-  newVersionNotificationSelector,
   staggeredVersionWarningSelector,
   (...alerts: Alert[]): Alert[] => {
     return _.without(alerts, null, undefined);
@@ -580,10 +476,7 @@ export function alertDataSync(store: Store<AdminUIState>) {
     const uiData = state.uiData;
     if (uiData !== lastUIData) {
       lastUIData = uiData;
-      const keysToMaybeLoad = [
-        VERSION_DISMISSED_KEY,
-        INSTRUCTIONS_BOX_COLLAPSED_KEY,
-      ];
+      const keysToMaybeLoad = [INSTRUCTIONS_BOX_COLLAPSED_KEY];
       const keysToLoad = _.filter(keysToMaybeLoad, key => {
         return !(_.has(uiData, key) || isInFlight(state, key));
       });
@@ -602,22 +495,6 @@ export function alertDataSync(store: Store<AdminUIState>) {
     const nodes = state.cachedData.nodes;
     if (nodes && !nodes.data && !nodes.inFlight) {
       dispatch(refreshNodes());
-    }
-
-    // Load potential new versions from CockroachDB cluster. This is the
-    // complicating factor of this function, since the call requires the cluster
-    // ID and node statuses being loaded first and thus cannot simply run at
-    // startup.
-    const currentVersion = singleVersionSelector(state);
-    if (_.isNil(newerVersionsSelector(state))) {
-      if (cluster.data && cluster.data.cluster_id && currentVersion) {
-        dispatch(
-          refreshVersion({
-            clusterID: cluster.data.cluster_id,
-            buildtag: currentVersion,
-          }),
-        );
-      }
     }
   };
 }

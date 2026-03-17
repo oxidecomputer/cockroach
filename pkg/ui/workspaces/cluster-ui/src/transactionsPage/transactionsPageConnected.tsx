@@ -46,7 +46,6 @@ import {
   updateTxnsPageReqSortAction,
 } from "../store/localStorage";
 import { Filters } from "../queryFilter";
-import { actions as analyticsActions } from "../store/analytics";
 import { TimeScale } from "../timeScaleDropdown";
 
 export const TransactionsPageConnected = withRouter(
@@ -112,14 +111,6 @@ export const TransactionsPageConnected = withRouter(
       },
       onFilterChange: (value: Filters) => {
         dispatch(
-          analyticsActions.track({
-            name: "Filter Clicked",
-            page: "Transactions",
-            filterName: "app",
-            value: value.toString(),
-          }),
-        );
-        dispatch(
           localStorageActions.update({
             key: "filters/TransactionsPage",
             value: value,
@@ -127,12 +118,6 @@ export const TransactionsPageConnected = withRouter(
         );
       },
       onSearchComplete: (query: string) => {
-        dispatch(
-          analyticsActions.track({
-            name: "Keyword Searched",
-            page: "Transactions",
-          }),
-        );
         dispatch(
           localStorageActions.update({
             key: "search/TransactionsPage",

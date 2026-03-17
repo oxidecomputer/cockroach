@@ -23,8 +23,6 @@ import {
   PaginatedCachedDataReducerState,
 } from "./cachedDataReducer";
 import * as api from "src/util/api";
-import { VersionList } from "src/interfaces/cockroachlabs";
-import { versionCheck } from "src/util/cockroachlabsAPI";
 import { INodeStatus, RollupStoreMetrics } from "src/util/proto";
 import { api as clusterUiApi } from "@cockroachlabs/cluster-ui";
 import * as protos from "src/js/protos";
@@ -78,9 +76,6 @@ const raftReducerObj = new CachedDataReducer(
   moment.duration(10, "s"),
 );
 export const refreshRaft = raftReducerObj.refresh;
-
-export const versionReducerObj = new CachedDataReducer(versionCheck, "version");
-export const refreshVersion = versionReducerObj.refresh;
 
 export const locationsReducerObj = new CachedDataReducer(
   api.getLocations,
@@ -401,7 +396,6 @@ export interface APIReducersState {
   health: HealthState;
   nodes: CachedDataReducerState<INodeStatus[]>;
   raft: CachedDataReducerState<api.RaftDebugResponseMessage>;
-  version: CachedDataReducerState<VersionList>;
   locations: CachedDataReducerState<api.LocationsResponseMessage>;
   databases: CachedDataReducerState<api.DatabasesResponseMessage>;
   databaseDetails: KeyedCachedDataReducerState<
@@ -446,7 +440,6 @@ export const apiReducersReducer = combineReducers<APIReducersState>({
   [healthReducerObj.actionNamespace]: healthReducerObj.reducer,
   [nodesReducerObj.actionNamespace]: nodesReducerObj.reducer,
   [raftReducerObj.actionNamespace]: raftReducerObj.reducer,
-  [versionReducerObj.actionNamespace]: versionReducerObj.reducer,
   [locationsReducerObj.actionNamespace]: locationsReducerObj.reducer,
   [databasesReducerObj.actionNamespace]: databasesReducerObj.reducer,
   [databaseDetailsReducerObj.actionNamespace]:

@@ -34,7 +34,6 @@ import { cockroach } from "src/js/protos";
 import IStatementDiagnosticsReport = cockroach.server.serverpb.IStatementDiagnosticsReport;
 import { statementDiagnostics } from "src/util/docs";
 import { summarize } from "src/util/sql/summarize";
-import { trackDownloadDiagnosticsBundle } from "src/util/analytics";
 import EmptyTableIcon from "!!url-loader!assets/emptyState/empty-table-results.svg";
 import {
   DownloadFile,
@@ -49,7 +48,6 @@ import {
   util,
 } from "@cockroachlabs/cluster-ui";
 import { cancelStatementDiagnosticsReportAction } from "src/redux/statements";
-import { trackCancelDiagnosticsBundleAction } from "src/redux/analyticsActions";
 
 type StatementDiagnosticsHistoryViewProps = MapStateToProps &
   MapDispatchToProps;
@@ -150,9 +148,6 @@ class StatementDiagnosticsHistoryView extends React.Component<
             <div className="crl-statements-diagnostics-view__actions-column cell--show-on-hover nodes-table__link">
               <a
                 href={`_admin/v1/stmtbundle/${record.statement_diagnostics_id}`}
-                onClick={() =>
-                  trackDownloadDiagnosticsBundle(record.statement_fingerprint)
-                }
               >
                 <Button
                   size="small"
@@ -299,7 +294,6 @@ const mapStateToProps = (state: AdminUIState): MapStateToProps => ({
 const mapDispatchToProps = (dispatch: AppDispatch): MapDispatchToProps => ({
   onDiagnosticCancelRequest: (report: IStatementDiagnosticsReport) => {
     dispatch(cancelStatementDiagnosticsReportAction(report.id));
-    dispatch(trackCancelDiagnosticsBundleAction(report.statement_fingerprint));
   },
   refresh: () => {
     dispatch(invalidateStatementDiagnosticsRequests());

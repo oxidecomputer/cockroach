@@ -10,7 +10,7 @@
 
 import { connect } from "react-redux";
 import { RouteComponentProps, withRouter } from "react-router-dom";
-import { analyticsActions, AppState } from "src/store";
+import { AppState } from "src/store";
 import { SessionDetails } from ".";
 import {
   actions as sessionsActions,
@@ -39,28 +39,6 @@ export const SessionDetailsPageConnected = withRouter(
       cancelQuery: terminateQueryActions.terminateQuery,
       refreshNodes: nodesActions.refresh,
       refreshNodesLiveness: nodesLivenessActions.refresh,
-      onTerminateSessionClick: () =>
-        analyticsActions.track({
-          name: "Session Actions Clicked",
-          page: "Sessions Details",
-          action: "Cancel Session",
-        }),
-      onTerminateStatementClick: () =>
-        analyticsActions.track({
-          name: "Session Actions Clicked",
-          page: "Sessions Details",
-          action: "Cancel Statement",
-        }),
-      onBackButtonClick: () =>
-        analyticsActions.track({
-          name: "Back Clicked",
-          page: "Sessions Details",
-        }),
-      onStatementClick: () =>
-        analyticsActions.track({
-          name: "Statement Clicked",
-          page: "Sessions Details",
-        }),
     },
   )(SessionDetails),
 );

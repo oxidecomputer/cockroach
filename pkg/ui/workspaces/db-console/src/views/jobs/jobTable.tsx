@@ -8,7 +8,7 @@
 // by the Apache License, Version 2.0, included in the file
 // licenses/APL.txt.
 
-import React, { MouseEvent } from "react";
+import React from "react";
 import { cockroach } from "src/js/protos";
 import { DATE_FORMAT_24_UTC } from "src/util/format";
 import { JobStatusCell } from "src/views/jobs/jobStatusCell";
@@ -31,7 +31,6 @@ import {
   jobStatus,
   jobTable,
 } from "src/util/docs";
-import { trackDocsLink } from "src/util/analytics";
 import { EmptyTable, SortedTable } from "@cockroachlabs/cluster-ui";
 import { Anchor } from "src/components";
 import emptyTableResultsIcon from "assets/emptyState/empty-table-results.svg";
@@ -263,11 +262,7 @@ export class JobTable extends React.Component<JobTableProps, JobTableState> {
           title="No jobs match your search"
           icon={magnifyingGlassIcon}
           footer={
-            <Anchor
-              href={jobTable}
-              target="_blank"
-              onClick={this.redirectToLearnMore}
-            >
+            <Anchor href={jobTable} target="_blank">
               Learn more about jobs
             </Anchor>
           }
@@ -280,21 +275,13 @@ export class JobTable extends React.Component<JobTableProps, JobTableState> {
           icon={emptyTableResultsIcon}
           message="The jobs page provides details about backup/restore jobs, schema changes, user-created table statistics, automatic table statistics jobs and changefeeds."
           footer={
-            <Anchor
-              href={jobTable}
-              target="_blank"
-              onClick={this.redirectToLearnMore}
-            >
+            <Anchor href={jobTable} target="_blank">
               Learn more about jobs
             </Anchor>
           }
         />
       );
     }
-  };
-
-  redirectToLearnMore = (e: MouseEvent<HTMLAnchorElement>) => {
-    trackDocsLink(e.currentTarget.text);
   };
 
   render() {

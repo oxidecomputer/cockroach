@@ -13,7 +13,6 @@ import Dropdown, { DropdownOption } from "src/views/shared/components/dropdown";
 import React from "react";
 import { RouteComponentProps, withRouter } from "react-router-dom";
 
-import { trackNetworkSort } from "src/util/analytics";
 import { getMatchParamByName } from "src/util/query";
 import { NetworkFilter, NetworkSort } from "..";
 import { Filter } from "../filter";
@@ -38,7 +37,6 @@ class Sort extends React.Component<ISortProps & RouteComponentProps, {}> {
   };
 
   navigateTo = (selected: DropdownOption) => {
-    trackNetworkSort(selected.label);
     this.props.onChangeCollapse(false);
     this.props.history.push(`/reports/network/${selected.value}`);
   };

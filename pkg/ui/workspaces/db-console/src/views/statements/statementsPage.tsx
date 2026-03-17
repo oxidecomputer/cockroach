@@ -48,11 +48,6 @@ import {
   createStatementDiagnosticsReportAction,
   setGlobalTimeScaleAction,
 } from "src/redux/statements";
-import {
-  trackCancelDiagnosticsBundleAction,
-  trackDownloadDiagnosticsBundleAction,
-  trackStatementsPaginationAction,
-} from "src/redux/analyticsActions";
 import { resetSQLStatsAction } from "src/redux/sqlStats";
 import { LocalSetting } from "src/redux/localsettings";
 import { nodeRegionsByIDSelector } from "src/redux/nodes";
@@ -335,7 +330,6 @@ export default withRouter(
       onActivateStatementDiagnostics: createStatementDiagnosticsReportAction,
       onDiagnosticsModalOpen: createOpenDiagnosticsModalAction,
       onSearchComplete: (query: string) => searchLocalSetting.set(query),
-      onPageChanged: trackStatementsPaginationAction,
       onSortingChange: (
         _tableName: string,
         columnName: string,
@@ -349,16 +343,9 @@ export default withRouter(
       onSelectDiagnosticsReportDropdownOption: (
         report: IStatementDiagnosticsReport,
       ) => {
-        if (report.completed) {
-          return trackDownloadDiagnosticsBundleAction(
-            report.statement_fingerprint,
-          );
-        } else {
+        if (!report.completed) {
           return (dispatch: AppDispatch) => {
             dispatch(cancelStatementDiagnosticsReportAction(report.id));
-            dispatch(
-              trackCancelDiagnosticsBundleAction(report.statement_fingerprint),
-            );
           };
         }
       },

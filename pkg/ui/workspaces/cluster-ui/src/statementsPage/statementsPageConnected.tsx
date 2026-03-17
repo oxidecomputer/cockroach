@@ -14,7 +14,6 @@ import { Dispatch } from "redux";
 
 import { AppState, uiConfigActions } from "src/store";
 import { actions as statementDiagnosticsActions } from "src/store/statementDiagnostics";
-import { actions as analyticsActions } from "src/store/analytics";
 import {
   actions as localStorageActions,
   updateStmtsPageLimitAction,
@@ -134,26 +133,11 @@ export const ConnectedStatementsPage = withRouter(
             }),
           ),
         );
-        dispatch(
-          analyticsActions.track({
-            name: "Statement Diagnostics Clicked",
-            page: "Statements",
-            action: "Activated",
-          }),
-        );
       },
       onSelectDiagnosticsReportDropdownOption: (
         report: IStatementDiagnosticsReport,
       ) => {
-        if (report.completed) {
-          dispatch(
-            analyticsActions.track({
-              name: "Statement Diagnostics Clicked",
-              page: "Statements",
-              action: "Downloaded",
-            }),
-          );
-        } else {
+        if (!report.completed) {
           dispatch(
             statementDiagnosticsActions.cancelReport(
               new CancelStatementDiagnosticsReportRequest({
@@ -161,22 +145,9 @@ export const ConnectedStatementsPage = withRouter(
               }),
             ),
           );
-          dispatch(
-            analyticsActions.track({
-              name: "Statement Diagnostics Clicked",
-              page: "Statements",
-              action: "Cancelled",
-            }),
-          );
         }
       },
       onSearchComplete: (query: string) => {
-        dispatch(
-          analyticsActions.track({
-            name: "Keyword Searched",
-            page: "Statements",
-          }),
-        );
         dispatch(
           localStorageActions.update({
             key: "search/StatementsPage",
@@ -185,14 +156,6 @@ export const ConnectedStatementsPage = withRouter(
         );
       },
       onFilterChange: value => {
-        dispatch(
-          analyticsActions.track({
-            name: "Filter Clicked",
-            page: "Statements",
-            filterName: "app",
-            value: value.toString(),
-          }),
-        );
         dispatch(
           localStorageActions.update({
             key: "filters/StatementsPage",
@@ -206,27 +169,12 @@ export const ConnectedStatementsPage = withRouter(
         ascending: boolean,
       ) => {
         dispatch(
-          analyticsActions.track({
-            name: "Column Sorted",
-            page: "Statements",
-            tableName,
-            columnName,
-          }),
-        );
-        dispatch(
           localStorageActions.update({
             key: "sortSetting/StatementsPage",
             value: { columnTitle: columnName, ascending: ascending },
           }),
         );
       },
-      onStatementClick: () =>
-        dispatch(
-          analyticsActions.track({
-            name: "Statement Clicked",
-            page: "Statements",
-          }),
-        ),
       // We use `null` when the value was never set and it will show all columns.
       // If the user modifies the selection and no columns are selected,
       // the function will save the value as a blank space, otherwise

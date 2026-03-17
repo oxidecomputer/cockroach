@@ -10,7 +10,7 @@
 
 import { RouteComponentProps, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
-import { analyticsActions, AppState } from "src/store";
+import { AppState } from "src/store";
 import { SessionsState } from "src/store/sessions";
 
 import { createSelector } from "reselect";
@@ -104,49 +104,13 @@ export const SessionsPageConnected = withRouter(
         ascending: boolean,
       ) => {
         dispatch(
-          analyticsActions.track({
-            name: "Column Sorted",
-            page: "Sessions",
-            tableName,
-            columnName,
-          }),
-        );
-        dispatch(
           localStorageActions.update({
             key: "sortSetting/SessionsPage",
             value: { columnTitle: columnName, ascending: ascending },
           }),
         );
       },
-      onSessionClick: () => {
-        dispatch(
-          analyticsActions.track({
-            name: "Session Clicked",
-            page: "Sessions",
-          }),
-        );
-      },
-      onTerminateSessionClick: () =>
-        analyticsActions.track({
-          name: "Session Actions Clicked",
-          page: "Sessions",
-          action: "Cancel Session",
-        }),
-      onTerminateStatementClick: () =>
-        analyticsActions.track({
-          name: "Session Actions Clicked",
-          page: "Sessions",
-          action: "Cancel Statement",
-        }),
       onFilterChange: (value: Filters) => {
-        dispatch(
-          analyticsActions.track({
-            name: "Filter Clicked",
-            page: "Sessions",
-            filterName: "app",
-            value: value.toString(),
-          }),
-        );
         dispatch(
           localStorageActions.update({
             key: "filters/SessionsPage",

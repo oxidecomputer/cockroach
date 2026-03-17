@@ -35,7 +35,6 @@ import {
   actions as statementDiagnosticsActions,
   selectDiagnosticsReportsByStatementFingerprint,
 } from "src/store/statementDiagnostics";
-import { actions as analyticsActions } from "src/store/analytics";
 import { actions as localStorageActions } from "src/store/localStorage";
 import { actions as nodesActions } from "../store/nodes";
 import { actions as nodeLivenessActions } from "../store/liveness";
@@ -121,30 +120,7 @@ const mapDispatchToProps = (
         }),
       ),
     );
-    dispatch(
-      analyticsActions.track({
-        name: "Statement Diagnostics Clicked",
-        page: "Statement Details",
-        action: "Activated",
-      }),
-    );
   },
-  onTabChanged: tabName =>
-    dispatch(
-      analyticsActions.track({
-        name: "Tab Changed",
-        page: "Statement Details",
-        tabName,
-      }),
-    ),
-  onDiagnosticBundleDownload: () =>
-    dispatch(
-      analyticsActions.track({
-        name: "Statement Diagnostics Clicked",
-        page: "Statement Details",
-        action: "Downloaded",
-      }),
-    ),
   onDiagnosticCancelRequest: (report: IStatementDiagnosticsReport) => {
     dispatch(
       statementDiagnosticsActions.cancelReport(
@@ -152,13 +128,6 @@ const mapDispatchToProps = (
           request_id: report.id,
         }),
       ),
-    );
-    dispatch(
-      analyticsActions.track({
-        name: "Statement Diagnostics Clicked",
-        page: "Statement Details",
-        action: "Cancelled",
-      }),
     );
   },
   onStatementDetailsQueryChange: (latestQuery: string) => {
@@ -169,22 +138,6 @@ const mapDispatchToProps = (
       sqlDetailsStatsActions.setLatestFormattedQuery(latestFormattedQuery),
     );
   },
-  onSortingChange: (tableName, columnName) =>
-    dispatch(
-      analyticsActions.track({
-        name: "Column Sorted",
-        page: "Statement Details",
-        columnName,
-        tableName,
-      }),
-    ),
-  onBackToStatementsClick: () =>
-    dispatch(
-      analyticsActions.track({
-        name: "Back Clicked",
-        page: "Statement Details",
-      }),
-    ),
 });
 
 export const ConnectedStatementDetailsPage = withRouter<any, any>(

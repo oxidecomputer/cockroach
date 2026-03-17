@@ -40,11 +40,6 @@ import {
 } from "src/redux/statements";
 import { createStatementDiagnosticsAlertLocalSetting } from "src/redux/alerts";
 import { selectHasViewActivityRedactedRole } from "src/redux/user";
-import {
-  trackCancelDiagnosticsBundleAction,
-  trackDownloadDiagnosticsBundleAction,
-  trackStatementDetailsSubnavSelectionAction,
-} from "src/redux/analyticsActions";
 import * as protos from "src/js/protos";
 import { StatementDetailsResponseMessage } from "src/util/api";
 import { getMatchParamByName, queryByName } from "src/util/query";
@@ -133,15 +128,10 @@ const mapDispatchToProps: StatementDetailsDispatchProps = {
   dismissStatementDiagnosticsAlertMessage: () =>
     createStatementDiagnosticsAlertLocalSetting.set({ show: false }),
   createStatementDiagnosticsReport: createStatementDiagnosticsReportAction,
-  onTabChanged: trackStatementDetailsSubnavSelectionAction,
   onTimeScaleChange: setGlobalTimeScaleAction,
-  onDiagnosticBundleDownload: trackDownloadDiagnosticsBundleAction,
   onDiagnosticCancelRequest: (report: IStatementDiagnosticsReport) => {
     return (dispatch: AppDispatch) => {
       dispatch(cancelStatementDiagnosticsReportAction(report.id));
-      dispatch(
-        trackCancelDiagnosticsBundleAction(report.statement_fingerprint),
-      );
     };
   },
   onStatementDetailsQueryChange: statementDetailsLatestQueryAction,
