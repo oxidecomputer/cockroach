@@ -125,11 +125,6 @@ func doMain(cmd *cobra.Command, cmdName string) error {
 		}
 	}
 
-	logcrash.SetupCrashReporter(
-		context.Background(),
-		cmdName,
-	)
-
 	defer logcrash.RecoverAndReportPanic(context.Background(), &serverCfg.Settings.SV)
 
 	return Run(os.Args[1:])

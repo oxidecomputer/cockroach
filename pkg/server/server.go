@@ -12,12 +12,10 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"sync"
 	"time"
 
@@ -86,7 +84,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/uuid"
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/redact"
-	"github.com/getsentry/sentry-go"
 	"google.golang.org/grpc/codes"
 )
 
@@ -1175,13 +1172,9 @@ func (s *Server) PreStart(ctx context.Context) error {
 		listenHTTP:   s.cfg.HTTPAdvertiseAddr,
 	}.Iter()
 
-	encryptedStore := false
 	for _, storeSpec := range s.cfg.Stores.Specs {
 		if storeSpec.InMemory {
 			continue
-		}
-		if storeSpec.IsEncrypted() {
-			encryptedStore = true
 		}
 
 		for name, val := range listenerFiles {
@@ -1376,16 +1369,6 @@ func (s *Server) PreStart(ctx context.Context) error {
 		return err
 	}
 	s.replicationReporter.Start(ctx, s.stopper)
-
-	sentry.ConfigureScope(func(scope *sentry.Scope) {
-		scope.SetTags(map[string]string{
-			"cluster":         s.StorageClusterID().String(),
-			"node":            s.NodeID().String(),
-			"server_id":       fmt.Sprintf("%s-%s", s.StorageClusterID().Short(), s.NodeID()),
-			"engine_type":     s.cfg.StorageEngine.String(),
-			"encrypted_store": strconv.FormatBool(encryptedStore),
-		})
-	})
 
 	// We can now add the node registry.
 	s.recorder.AddNode(

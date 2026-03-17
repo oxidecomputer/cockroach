@@ -61,7 +61,6 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a
 	github.com/fraugster/parquet-go v0.10.0
 	github.com/fsnotify/fsnotify v1.5.1
-	github.com/getsentry/sentry-go v0.12.0
 	github.com/ghemawat/stream v0.0.0-20171120220530-696b145b53b9
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/go-swagger/go-swagger v0.26.1
@@ -199,6 +198,7 @@ require (
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/felixge/httpsnoop v1.0.1 // indirect
+	github.com/getsentry/sentry-go v0.12.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-kit/log v0.1.0 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect

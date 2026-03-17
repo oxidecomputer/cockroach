@@ -20,7 +20,6 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/util/log/channel"
 	"github.com/cockroachdb/cockroach/pkg/util/log/logpb"
 	"github.com/cockroachdb/cockroach/pkg/util/log/severity"
-	"github.com/cockroachdb/errors"
 )
 
 //go:generate go run gen/main.go logpb/log.proto logging.md ../../../docs/generated/logging.md
@@ -73,10 +72,6 @@ func logfDepthInternal(
 		})
 		defer t.Stop()
 
-		if MaybeSendCrashReport != nil {
-			err := errors.NewWithDepthf(depth+1, "log.Fatal: "+format, args...)
-			MaybeSendCrashReport(ctx, err)
-		}
 		if ch != channel.OPS {
 			// Tell the OPS channel about this termination.
 			logfDepth(ctx, depth+1, severity.INFO, channel.OPS,
@@ -138,6 +133,3 @@ func (l *loggingT) getLogger(ch Channel) *loggerT {
 func LoggingToStderr(s Severity) bool {
 	return s >= logging.stderrSinkInfoTemplate.threshold.get(channel.DEV)
 }
-
-// MaybeSendCrashReport is injected by package logcrash
-var MaybeSendCrashReport func(ctx context.Context, err error)

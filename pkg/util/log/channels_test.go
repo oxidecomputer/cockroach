@@ -80,7 +80,6 @@ func TestRepro81025(t *testing.T) {
 	defer Scope(t).Close(t)
 
 	// Don't bother sending crash events.
-	MaybeSendCrashReport = func(ctx context.Context, err error) {}
 	ExitTimeoutOnFatalLog = time.Second
 
 	// Create a new file-backed sink.

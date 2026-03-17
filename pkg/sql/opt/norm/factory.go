@@ -332,7 +332,6 @@ func (f *Factory) onMaxConstructorStackDepthExceeded() {
 	if buildutil.CrdbTestBuild {
 		panic(err)
 	}
-	errorutil.SendReport(f.evalCtx.Ctx(), &f.evalCtx.Settings.SV, err)
 }
 
 // onConstructRelational is called as a final step by each factory method that
