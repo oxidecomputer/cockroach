@@ -30,35 +30,6 @@ import (
 const depthForRecoverAndReportPanic = 3
 
 var (
-	// DiagnosticsReportingEnabled wraps "diagnostics.reporting.enabled".
-	//
-	// "diagnostics.reporting.enabled" enables reporting of metrics related to a
-	// node's storage (number, size and health of ranges) back to CockroachDB.
-	// Collecting this data from production clusters helps us understand and improve
-	// how our storage systems behave in real-world use cases.
-	//
-	// Note: while the setting itself is actually defined with a default value of
-	// `false`, it is usually automatically set to `true` when a cluster is created
-	// (or is migrated from a earlier beta version). This can be prevented with the
-	// env var COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING.
-	//
-	// Doing this, rather than just using a default of `true`, means that a node
-	// will not errantly send a report using a default before loading settings.
-	DiagnosticsReportingEnabled = settings.RegisterBoolSetting(
-		settings.TenantWritable,
-		"diagnostics.reporting.enabled",
-		"enable reporting diagnostic metrics to cockroach labs",
-		false,
-	).WithPublic()
-
-	// CrashReports wraps "diagnostics.reporting.send_crash_reports".
-	CrashReports = settings.RegisterBoolSetting(
-		settings.TenantWritable,
-		"diagnostics.reporting.send_crash_reports",
-		"send crash and panic reports",
-		true,
-	)
-
 	// PanicOnAssertions wraps "debug.panic_on_failed_assertions"
 	PanicOnAssertions = settings.RegisterBoolSetting(
 		settings.TenantWritable,

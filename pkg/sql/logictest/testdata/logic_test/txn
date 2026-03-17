@@ -1038,7 +1038,7 @@ statement error cannot execute DROP ROLE in a read-only transaction
 DROP ROLE testuser
 
 statement error cannot execute SET CLUSTER SETTING in a read-only transaction
-SET CLUSTER SETTING diagnostics.reporting.enabled = true
+SET CLUSTER SETTING feature.stats.enabled = false
 
 statement error cannot execute GRANT in a read-only transaction
 GRANT admin TO testuser

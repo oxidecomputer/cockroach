@@ -719,8 +719,7 @@ func extendCreateRoleWithCreateLogin(ctx context.Context, r runner) error {
 // an explicit value for a setting, effectively changing the "default value"
 // from what was defined in code.
 var SettingsDefaultOverrides = map[string]string{
-	"diagnostics.reporting.enabled": "true",
-	"cluster.secret":                "<random>",
+	"cluster.secret": "<random>",
 }
 
 func optInToDiagnosticsStatReporting(ctx context.Context, r runner) error {

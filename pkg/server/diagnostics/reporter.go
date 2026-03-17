@@ -48,15 +48,7 @@ type NodeStatusGenerator interface {
 	GenerateNodeStatus(ctx context.Context) *statuspb.NodeStatus
 }
 
-var _ = settings.RegisterDurationSetting(
-	settings.TenantWritable,
-	"diagnostics.reporting.interval",
-	"interval at which diagnostics data should be reported (this setting does nothing; diagnostics reporting has been removed)",
-	time.Hour,
-	settings.NonNegativeDuration,
-).WithPublic()
-
-// Reporter is a helper struct that phones home to report usage and diagnostics.
+// Reporter is a helper struct for generating usage and diagnostics reports.
 type Reporter struct {
 	StartTime time.Time
 	Settings  *cluster.Settings

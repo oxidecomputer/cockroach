@@ -1054,12 +1054,7 @@ func (ex *connExecutor) closeWrapper(ctx context.Context, recovered interface{})
 			log.SqlExec.Shoutf(ctx, severity.ERROR,
 				"a SQL panic has occurred while executing the following statement:\n%s",
 				// For the log message, the statement is not anonymized.
-				truncateStatementStringForTelemetry(ex.curStmtAST.String()))
-
-			// Embed the statement in the error object for the telemetry
-			// report below. The statement gets anonymized.
-			vt := ex.planner.extendedEvalCtx.VirtualSchemas
-			panicErr = WithAnonymizedStatement(panicErr, ex.curStmtAST, vt)
+				ex.curStmtAST.String())
 		}
 
 		// Report the panic to telemetry in any case.

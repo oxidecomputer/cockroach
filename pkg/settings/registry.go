@@ -134,6 +134,11 @@ var retiredSettings = map[string]struct{}{
 	"tenant_cost_model.pod_cpu_second_cost":             {},
 	"tenant_cost_model.pgwire_egress_cost_per_megabyte": {},
 	"sql.ttl.range_batch_size":                          {},
+
+	// [Oxide-specific] removed in our fork.
+	"diagnostics.reporting.enabled":            {},
+	"diagnostics.reporting.send_crash_reports": {},
+	"diagnostics.reporting.interval":           {},
 }
 
 // register adds a setting to the registry.

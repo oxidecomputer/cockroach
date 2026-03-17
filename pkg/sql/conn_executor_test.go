@@ -16,7 +16,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -30,12 +29,10 @@ import (
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/kvserverbase"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/security"
-	"github.com/cockroachdb/cockroach/pkg/settings/cluster"
 	"github.com/cockroachdb/cockroach/pkg/sql"
 	"github.com/cockroachdb/cockroach/pkg/sql/catalog/descpb"
 	"github.com/cockroachdb/cockroach/pkg/sql/execinfra"
 	"github.com/cockroachdb/cockroach/pkg/sql/mutations"
-	"github.com/cockroachdb/cockroach/pkg/sql/parser"
 	"github.com/cockroachdb/cockroach/pkg/sql/pgwire/pgcode"
 	"github.com/cockroachdb/cockroach/pkg/sql/rowexec"
 	"github.com/cockroachdb/cockroach/pkg/sql/sem/tree"
@@ -56,75 +53,11 @@ import (
 	"github.com/cockroachdb/datadriven"
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/logtags"
-	"github.com/cockroachdb/redact"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/lib/pq"
-	"github.com/pmezard/go-difflib/difflib"
 	"github.com/stretchr/testify/require"
 )
-
-func TestAnonymizeStatementsForReporting(t *testing.T) {
-	defer leaktest.AfterTest(t)()
-	defer log.Scope(t).Close(t)
-
-	s := cluster.MakeTestingClusterSettings()
-	vt, err := sql.NewVirtualSchemaHolder(context.Background(), s)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	const stmt1s = `
-INSERT INTO sensitive(super, sensible) VALUES('that', 'nobody', 'must', 'see')
-`
-	stmt1, err := parser.ParseOne(stmt1s)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	rUnsafe := errors.New("some error")
-	safeErr := sql.WithAnonymizedStatement(rUnsafe, stmt1.AST, vt)
-
-	const expMessage = "some error"
-	actMessage := safeErr.Error()
-	if actMessage != expMessage {
-		t.Errorf("wanted: %s\ngot: %s", expMessage, actMessage)
-	}
-
-	const expSafeRedactedMessage = `some error
-(1) while executing: INSERT INTO _(_, _) VALUES ('_', '_', __more1_10__)
-Wraps: (2) attached stack trace
-  -- stack trace:
-  | github.com/cockroachdb/cockroach/pkg/sql_test.TestAnonymizeStatementsForReporting
-  | 	...conn_executor_test.go:NN
-  | testing.tRunner
-  | 	...testing.go:NN
-  | runtime.goexit
-  | 	...asm_scrubbed.s:NN
-Wraps: (3) some error
-Error types: (1) *safedetails.withSafeDetails (2) *withstack.withStack (3) *errutil.leafError`
-
-	// Edit non-determinstic stack trace filenames from the message.
-	actSafeRedactedMessage := strings.ReplaceAll(strings.ReplaceAll(fileref.ReplaceAllString(
-		redact.Sprintf("%+v", safeErr).Redact().StripMarkers(), "...$2:NN"),
-		"asm_arm64", "asm_scrubbed"),
-		"asm_amd64", "asm_scrubbed")
-
-	if actSafeRedactedMessage != expSafeRedactedMessage {
-		diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-			A:        difflib.SplitLines(expSafeRedactedMessage),
-			B:        difflib.SplitLines(actSafeRedactedMessage),
-			FromFile: "Expected",
-			FromDate: "",
-			ToFile:   "Actual",
-			ToDate:   "",
-			Context:  1,
-		})
-		t.Errorf("Diff:\n%s", diff)
-	}
-}
-
-var fileref = regexp.MustCompile(`((?:[a-zA-Z0-9\._@-]*/)*)([a-zA-Z0-9._@-]*\.(?:go|s)):\d+`)
 
 // Test that a connection closed abruptly while a SQL txn is in progress results
 // in that txn being rolled back.

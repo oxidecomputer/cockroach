@@ -1389,46 +1389,40 @@ func TestAdminAPIUISeparateData(t *testing.T) {
 func TestClusterAPI(t *testing.T) {
 	defer leaktest.AfterTest(t)()
 	defer log.Scope(t).Close(t)
-	s, db, _ := serverutils.StartServer(t, base.TestServerArgs{})
+	s, _, _ := serverutils.StartServer(t, base.TestServerArgs{})
 	defer s.Stopper().Stop(context.Background())
 
-	testutils.RunTrueAndFalse(t, "reportingOn", func(t *testing.T, reportingOn bool) {
-		testutils.RunTrueAndFalse(t, "enterpriseOn", func(t *testing.T, enterpriseOn bool) {
-			// Override server license check.
-			if enterpriseOn {
-				old := base.CheckEnterpriseEnabled
-				base.CheckEnterpriseEnabled = func(_ *cluster.Settings, _ uuid.UUID, _, _ string) error {
-					return nil
-				}
-				defer func() { base.CheckEnterpriseEnabled = old }()
-			}
-
-			if _, err := db.Exec(`SET CLUSTER SETTING diagnostics.reporting.enabled = $1`, reportingOn); err != nil {
-				t.Fatal(err)
-			}
-
-			// We need to retry, because the cluster ID isn't set until after
-			// bootstrapping and because setting a cluster setting isn't necessarily
-			// instantaneous.
-			//
-			// Also note that there's a migration that affects `diagnostics.reporting.enabled`,
-			// so manipulating the cluster setting var directly is a bad idea.
-			testutils.SucceedsSoon(t, func() error {
-				var resp serverpb.ClusterResponse
-				if err := getAdminJSONProto(s, "cluster", &resp); err != nil {
-					return err
-				}
-				if a, e := resp.ClusterID, s.RPCContext().StorageClusterID.String(); a != e {
-					return errors.Errorf("cluster ID %s != expected %s", a, e)
-				}
-				if a, e := resp.ReportingEnabled, reportingOn; a != e {
-					return errors.Errorf("reportingEnabled = %t, wanted %t", a, e)
-				}
-				if a, e := resp.EnterpriseEnabled, enterpriseOn; a != e {
-					return errors.Errorf("enterpriseEnabled = %t, wanted %t", a, e)
-				}
+	testutils.RunTrueAndFalse(t, "enterpriseOn", func(t *testing.T, enterpriseOn bool) {
+		// Override server license check.
+		if enterpriseOn {
+			old := base.CheckEnterpriseEnabled
+			base.CheckEnterpriseEnabled = func(_ *cluster.Settings, _ uuid.UUID, _, _ string) error {
 				return nil
-			})
+			}
+			defer func() { base.CheckEnterpriseEnabled = old }()
+		}
+
+		// We need to retry, because the cluster ID isn't set until after
+		// bootstrapping and because setting a cluster setting isn't necessarily
+		// instantaneous.
+		//
+		// Also note that there's a migration that affects `diagnostics.reporting.enabled`,
+		// so manipulating the cluster setting var directly is a bad idea.
+		testutils.SucceedsSoon(t, func() error {
+			var resp serverpb.ClusterResponse
+			if err := getAdminJSONProto(s, "cluster", &resp); err != nil {
+				return err
+			}
+			if a, e := resp.ClusterID, s.RPCContext().StorageClusterID.String(); a != e {
+				return errors.Errorf("cluster ID %s != expected %s", a, e)
+			}
+			if resp.ReportingEnabled {
+				return errors.Errorf("reportingEnabled = %t, wanted %t", resp.ReportingEnabled, false)
+			}
+			if a, e := resp.EnterpriseEnabled, enterpriseOn; a != e {
+				return errors.Errorf("enterpriseEnabled = %t, wanted %t", a, e)
+			}
+			return nil
 		})
 	})
 }

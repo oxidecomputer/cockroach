@@ -2098,20 +2098,6 @@ func (jc *jobsCollection) add(ids ...jobspb.JobID) {
 	*jc = append(*jc, ids...)
 }
 
-// truncateStatementStringForTelemetry truncates the string
-// representation of a statement to a maximum length, so as to not
-// create unduly large logging and error payloads.
-func truncateStatementStringForTelemetry(stmt string) string {
-	// panicLogOutputCutoiffChars is the maximum length of the copy of the
-	// current statement embedded in telemetry reports and panic errors in
-	// logs.
-	const panicLogOutputCutoffChars = 10000
-	if len(stmt) > panicLogOutputCutoffChars {
-		stmt = stmt[:len(stmt)-6] + " [...]"
-	}
-	return stmt
-}
-
 // hideNonVirtualTableNameFunc returns a function that can be used with
 // FmtCtx.SetReformatTableNames. It hides all table names that are not virtual
 // tables.
@@ -2159,31 +2145,6 @@ func hideNonVirtualTableNameFunc(vt VirtualTabler) func(ctx *tree.FmtCtx, name *
 		})
 	}
 	return reformatFn
-}
-
-func anonymizeStmtAndConstants(stmt tree.Statement, vt VirtualTabler) string {
-	// Re-format to remove most names.
-	fmtFlags := tree.FmtAnonymize | tree.FmtHideConstants
-	var f *tree.FmtCtx
-	if vt != nil {
-		f = tree.NewFmtCtx(
-			fmtFlags,
-			tree.FmtReformatTableNames(hideNonVirtualTableNameFunc(vt)),
-		)
-	} else {
-		f = tree.NewFmtCtx(fmtFlags)
-	}
-	f.FormatNode(stmt)
-	return f.CloseAndGetString()
-}
-
-// WithAnonymizedStatement attaches the anonymized form of a statement
-// to an error object.
-func WithAnonymizedStatement(err error, stmt tree.Statement, vt VirtualTabler) error {
-	anonStmtStr := anonymizeStmtAndConstants(stmt, vt)
-	anonStmtStr = truncateStatementStringForTelemetry(anonStmtStr)
-	return errors.WithSafeDetails(err,
-		"while executing: %s", errors.Safe(anonStmtStr))
 }
 
 // SessionTracing holds the state used by SET TRACING statements in the context

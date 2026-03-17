@@ -49,8 +49,8 @@ type TestTenantInterface interface {
 	PGServer() interface{}
 
 	// DiagnosticsReporter returns the tenant's *diagnostics.Reporter as an
-	// interface{}. The DiagnosticsReporter periodically phones home to report
-	// diagnostics and usage.
+	// interface{}. The DiagnosticsReporter can generate diagnostics and usage
+	// reports.
 	DiagnosticsReporter() interface{}
 
 	// StatusServer returns the tenant's *server.SQLStatusServer as an
