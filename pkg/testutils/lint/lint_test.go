@@ -1,13 +1,17 @@
 // Copyright 2016 The Cockroach Authors.
 // Copyright 2025 Oxide Computer Company
 //
-// Use of this software is governed by the Business Source License
-// included in the file licenses/BSL.txt.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// As of the Change Date specified in that file, in accordance with
-// the Business Source License, use of this software will be governed
-// by the Apache License, Version 2.0, included in the file
-// licenses/APL.txt.
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 
 //go:build lint
 // +build lint
@@ -180,14 +184,18 @@ func TestLint(t *testing.T) {
 // included in the file licenses/APL.txt.
 `)
 
-		bslHeader := regexp.MustCompile(`(// Copyright 20\d\d .+\n)+//
-// Use of this software is governed by the Business Source License
-// included in the file licenses/BSL.txt.
+		apacheHeader := regexp.MustCompile(`(// Copyright 20\d\d .+\n)+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// As of the Change Date specified in that file, in accordance with
-// the Business Source License, use of this software will be governed
-// by the Apache License, Version 2.0, included in the file
-// licenses/APL.txt.
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the License.
 `)
 
 		// These extensions identify source files that should have copyright headers.
@@ -228,7 +236,7 @@ func TestLint(t *testing.T) {
 			}
 			data = data[0:n]
 
-			if aslHeader.Find(data) == nil && bslHeader.Find(data) == nil {
+			if aslHeader.Find(data) == nil && apacheHeader.Find(data) == nil {
 				t.Errorf("did not find expected license header in %s", filename)
 			}
 		}); err != nil {
