@@ -1,8 +1,6 @@
 module github.com/cockroachdb/cockroach
 
-go 1.22.1
-
-toolchain go1.22.11
+go 1.26.2
 
 require (
 	cloud.google.com/go/storage v1.21.0
