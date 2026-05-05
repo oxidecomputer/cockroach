@@ -8,6 +8,14 @@
 // by the Apache License, Version 2.0, included in the file
 // licenses/APL.txt.
 
+// TestPutHttp relies on url.Parse in cloud_test_helpers.go
+// for reading the schema from a URL like
+// "https://127.0.0.1:39301,127.0.0.1:41869,127.0.0.1:34705/testing". Go 1.26
+// changed the default behavior of url.Parse to return an error if the port
+// number after a host is invalid, providing this GODEBUG setting to revert
+// the behavior.
+//go:debug urlstrictcolons=0
+
 package httpsink
 
 import (
