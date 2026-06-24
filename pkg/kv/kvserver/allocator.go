@@ -689,6 +689,29 @@ func (a *Allocator) computeAction(
 	// decommissioning/decommissioned nodes.
 	clusterNodes := a.storePool.ClusterNodeCount()
 	neededVoters := GetNeededVoters(conf.GetNumVoters(), clusterNodes)
+
+	// TODO-RAINCLAUDE: experiment 2 for omicron#10658 — policy-floor the effective
+	// RF. The effective replication factor must be driven exclusively by operator
+	// policy: the configured RF (conf.GetNumVoters()) and operator decommissioning.
+	// It must NOT be driven by transient cluster health. GetNeededVoters above
+	// derives neededVoters from clusterNodes, which is the leaseholder's cache-based
+	// node count and can read phantom-low when the liveness cache is cold (the
+	// omicron#10658 trigger). We therefore floor neededVoters at the number of this
+	// range's own voters that sit on nodes the operator has NOT decommissioned,
+	// capped at the configured RF. A dead-but-not-decommissioned voter still counts,
+	// so a cold cache can no longer size a healthy range below the replicas it
+	// already has and trim it; only lowering num_replicas or decommissioning (both
+	// operator policy) can reduce the effective RF. The range descriptor is
+	// authoritative (Raft-replicated), so this needs no KV scan.
+	if policyFloor := haveVoters - len(decommissioningVoters); policyFloor > neededVoters {
+		if maxRF := int(conf.GetNumVoters()); policyFloor > maxRF {
+			policyFloor = maxRF
+		}
+		if policyFloor > neededVoters {
+			neededVoters = policyFloor
+		}
+	}
+
 	desiredQuorum := computeQuorum(neededVoters)
 	quorum := computeQuorum(haveVoters)
 

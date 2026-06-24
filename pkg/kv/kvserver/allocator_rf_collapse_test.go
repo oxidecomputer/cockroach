@@ -67,20 +67,31 @@ func TestAllocatorDownReplicatesOnColdLivenessCache(t *testing.T) {
 	conf := roachpb.SpanConfig{NumReplicas: 5}
 	allFive := []roachpb.StoreID{1, 2, 3, 4, 5}
 
+	// TODO-RAINCLAUDE: experiment 2 for omicron#10658 (policy-floor the effective
+	// RF). Note the difference from experiment 1 (which removed the downshift from
+	// GetNeededVoters): here GetNeededVoters is UNCHANGED, so `expectedNumReplicas`
+	// still reflects the downshift — a cold cache still computes an effective RF of
+	// 3. What changed is ComputeAction: it floors the target at the range's own
+	// non-decommissioned replica count (5 here), so a healthy RF-5 range is no
+	// longer trimmed even though GetNeededVoters reports 3. The bug was the
+	// *removal*, and the floor blocks it while leaving the downshift formula (and
+	// thus the small-cluster and decommission behavior) intact. `oldExpectedAction`
+	// is the original buggy action.
 	testCases := []struct {
 		cacheRecords        int
 		expectedNumReplicas int
+		oldExpectedAction   AllocatorAction
 		expectedAction      AllocatorAction
 	}{
-		// < 5 leads to an effective RF of 3. (These are in ascending order to
-		// make testing easier.)
-		{cacheRecords: 0, expectedNumReplicas: 3, expectedAction: AllocatorRemoveVoter},
-		{cacheRecords: 1, expectedNumReplicas: 3, expectedAction: AllocatorRemoveVoter},
-		{cacheRecords: 2, expectedNumReplicas: 3, expectedAction: AllocatorRemoveVoter},
-		{cacheRecords: 3, expectedNumReplicas: 3, expectedAction: AllocatorRemoveVoter},
-		{cacheRecords: 4, expectedNumReplicas: 3, expectedAction: AllocatorRemoveVoter},
-		// 5 leads to an effective RF of 5.
-		{cacheRecords: 5, expectedNumReplicas: 5, expectedAction: AllocatorConsiderRebalance},
+		// GetNeededVoters still downshifts to 3 on a cold cache, but ComputeAction
+		// floors to the 5 live non-decommissioned replicas and does nothing.
+		{cacheRecords: 0, expectedNumReplicas: 3, oldExpectedAction: AllocatorRemoveVoter, expectedAction: AllocatorConsiderRebalance},
+		{cacheRecords: 1, expectedNumReplicas: 3, oldExpectedAction: AllocatorRemoveVoter, expectedAction: AllocatorConsiderRebalance},
+		{cacheRecords: 2, expectedNumReplicas: 3, oldExpectedAction: AllocatorRemoveVoter, expectedAction: AllocatorConsiderRebalance},
+		{cacheRecords: 3, expectedNumReplicas: 3, oldExpectedAction: AllocatorRemoveVoter, expectedAction: AllocatorConsiderRebalance},
+		{cacheRecords: 4, expectedNumReplicas: 3, oldExpectedAction: AllocatorRemoveVoter, expectedAction: AllocatorConsiderRebalance},
+		// A warm cache (all 5 records) was correct before and after.
+		{cacheRecords: 5, expectedNumReplicas: 5, oldExpectedAction: AllocatorConsiderRebalance, expectedAction: AllocatorConsiderRebalance},
 	}
 
 	nextNode := roachpb.NodeID(1)
