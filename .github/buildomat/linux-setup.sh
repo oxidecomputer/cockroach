@@ -1,7 +1,7 @@
 source .github/buildomat/versions.sh
 
 sudo apt-get install -y --no-install-recommends \
-    build-essential autoconf cmake libedit-dev ncurses-dev
+    build-essential autoconf cmake libedit-dev ncurses-dev unzip
 
 pushd /work
 curl -sSfL --retry 10 -O "https://go.dev/dl/go$GO_VERSION.linux-amd64.tar.gz"
