@@ -598,6 +598,35 @@ func (sp *StorePool) decommissioningReplicas(
 	return
 }
 
+// TODO-RAINCLAUDE: fix for the omicron#10658 policy floor — the set of replicas
+// the operator has directed out of the cluster, keyed on liveness MEMBERSHIP
+// rather than store-pool status. decommissioningReplicas above only matches
+// storeStatusDecommissioning, which requires a LIVE decommissioning node: a
+// dead node under decommission reports NodeLivenessStatus_DECOMMISSIONED
+// (dead + non-active membership) and lands in storeStatusDead instead. The
+// policy floor must exclude both, or a dead node's replicas can never be shed.
+// An UNAVAILABLE node (expired but not yet past the dead threshold) is
+// deliberately NOT matched even if its membership is non-active: excluding it
+// from the floor while it sits in neither the dead nor the decommissioning
+// status set would open a liveness-blind RemoveVoter window in computeAction.
+// A node absent from the liveness cache reads as UNKNOWN and is likewise not
+// matched, which keeps the floor high — the fail-safe direction.
+func (sp *StorePool) decommissioningOrDecommissionedReplicas(
+	repls []roachpb.ReplicaDescriptor,
+) (inactive []roachpb.ReplicaDescriptor) {
+	now := sp.clock.Now().GoTime()
+	timeUntilStoreDead := TimeUntilStoreDead.Get(&sp.st.SV)
+
+	for _, repl := range repls {
+		switch sp.nodeLivenessFn(repl.NodeID, now, timeUntilStoreDead) {
+		case livenesspb.NodeLivenessStatus_DECOMMISSIONING,
+			livenesspb.NodeLivenessStatus_DECOMMISSIONED:
+			inactive = append(inactive, repl)
+		}
+	}
+	return inactive
+}
+
 // ClusterNodeCount returns the number of nodes that are possible allocation
 // targets. This includes dead nodes, but not decommissioning or decommissioned
 // nodes.
