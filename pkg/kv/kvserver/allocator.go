@@ -689,6 +689,25 @@ func (a *Allocator) computeAction(
 	// decommissioning/decommissioned nodes.
 	clusterNodes := a.storePool.ClusterNodeCount()
 	neededVoters := GetNeededVoters(conf.GetNumVoters(), clusterNodes)
+
+	// TODO-RAINCLAUDE: experiment 2 for omicron#10658 — apply the policy floor
+	// to the allocator's target; see allocator_policyfloor.go for the rule and
+	// the helpers' invariants. clusterNodes above is the leaseholder's
+	// cache-based node count and can read phantom-low when the liveness cache
+	// is cold (the omicron#10658 trigger); the floor keeps a transient count
+	// from sizing a range below the voters it already holds on nodes the
+	// operator has not decommissioned, so the liveness-blind RemoveVoter branch
+	// below fires only when haveVoters exceeds the configured RF. The excluded
+	// set deliberately differs from decommissioningVoters above (status-keyed,
+	// live nodes only): a policy-removed voter is either live-decommissioning
+	// (handled by the RemoveDecommissioningVoter branch) or dead (handled by
+	// RemoveDeadVoter, whose removal candidates the replicate queue restricts
+	// to dead replicas). The range descriptor is authoritative
+	// (Raft-replicated), so this needs no KV scan.
+	policyRemovedVoters := a.storePool.decommissioningOrDecommissionedReplicas(voterReplicas)
+	neededVoters = policyFloorNeededVoters(
+		neededVoters, haveVoters, len(policyRemovedVoters), int(conf.GetNumVoters()))
+
 	desiredQuorum := computeQuorum(neededVoters)
 	quorum := computeQuorum(haveVoters)
 

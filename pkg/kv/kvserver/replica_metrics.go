@@ -180,6 +180,16 @@ func calcRangeCounter(
 	// unavailable ranges for each range based on the liveness table.
 	if rangeCounter {
 		neededVoters := GetNeededVoters(numVoters, clusterNodes)
+		// TODO-RAINCLAUDE: omicron#10658 — the same policy floor computeAction
+		// applies, so the gauges agree with the allocator; see
+		// allocator_policyfloor.go. Without it, a phantom-low clusterNodes makes
+		// ranges_underreplicated go blind exactly when it matters and false-alarms
+		// ranges_overreplicated on every healthy RF-5 range, and states the
+		// allocator deliberately preserves (e.g. 4 voters on 4 nodes after a
+		// decommission) read over-replicated forever.
+		voterDescs := desc.Replicas().VoterDescriptors()
+		neededVoters = policyFloorNeededVoters(neededVoters, len(voterDescs),
+			policyRemovedVoterCount(voterDescs, livenessMap), int(numVoters))
 		neededNonVoters := GetNeededNonVoters(int(numVoters), int(numReplicas-numVoters), clusterNodes)
 		status := desc.Replicas().ReplicationStatus(func(rDesc roachpb.ReplicaDescriptor) bool {
 			return livenessMap[rDesc.NodeID].IsLive

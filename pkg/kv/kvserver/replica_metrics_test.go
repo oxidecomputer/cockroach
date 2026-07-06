@@ -15,6 +15,7 @@ import (
 
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/kvserverpb"
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/liveness"
+	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/liveness/livenesspb"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
 	"github.com/cockroachdb/cockroach/pkg/util/log"
@@ -130,6 +131,128 @@ func TestCalcRangeCounterIsLiveMap(t *testing.T) {
 			1000: liveness.IsLiveMapEntry{IsLive: true},
 			2000: liveness.IsLiveMapEntry{IsLive: true},
 		}, 1 /* numVoters */, 3 /* numReplicas */, 4 /* clusterNodes */)
+
+		require.True(t, ctr)
+		require.False(t, down)
+		require.False(t, under)
+		require.True(t, over)
+	}
+}
+
+// TODO-RAINCLAUDE: omicron#10658 — the policy floor applied to the gauges, so
+// they agree with the allocator. Covers: the madrid phantom window (healthy
+// range no longer reads over-replicated; a range whose voters the leaseholder
+// cannot account for reads under-replicated instead of quiet), the
+// dead-decommission and even-steady states (no longer permanently
+// over-replicated), and genuine over-replication versus the configured RF
+// (still detected — the floor is capped at numVoters).
+func TestCalcRangeCounterPolicyFloor(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+	defer log.Scope(t).Close(t)
+
+	leaseStatus := kvserverpb.LeaseStatus{
+		Lease: roachpb.Lease{
+			Replica: roachpb.ReplicaDescriptor{
+				NodeID:  1,
+				StoreID: 10,
+			},
+		},
+		State: kvserverpb.LeaseState_VALID,
+	}
+
+	fiveVoters := roachpb.NewRangeDescriptor(123, roachpb.RKeyMin, roachpb.RKeyMax,
+		roachpb.MakeReplicaSet([]roachpb.ReplicaDescriptor{
+			{NodeID: 1, StoreID: 10, ReplicaID: 1, Type: roachpb.ReplicaTypeVoterFull()},
+			{NodeID: 2, StoreID: 20, ReplicaID: 2, Type: roachpb.ReplicaTypeVoterFull()},
+			{NodeID: 3, StoreID: 30, ReplicaID: 3, Type: roachpb.ReplicaTypeVoterFull()},
+			{NodeID: 4, StoreID: 40, ReplicaID: 4, Type: roachpb.ReplicaTypeVoterFull()},
+			{NodeID: 5, StoreID: 50, ReplicaID: 5, Type: roachpb.ReplicaTypeVoterFull()},
+		}))
+
+	fourVoters := roachpb.NewRangeDescriptor(124, roachpb.RKeyMin, roachpb.RKeyMax,
+		roachpb.MakeReplicaSet([]roachpb.ReplicaDescriptor{
+			{NodeID: 1, StoreID: 10, ReplicaID: 1, Type: roachpb.ReplicaTypeVoterFull()},
+			{NodeID: 2, StoreID: 20, ReplicaID: 2, Type: roachpb.ReplicaTypeVoterFull()},
+			{NodeID: 3, StoreID: 30, ReplicaID: 3, Type: roachpb.ReplicaTypeVoterFull()},
+			{NodeID: 4, StoreID: 40, ReplicaID: 4, Type: roachpb.ReplicaTypeVoterFull()},
+		}))
+
+	live := liveness.IsLiveMapEntry{IsLive: true}
+	// A dead node under operator decommission: non-active membership, not live.
+	deadDecommissioning := liveness.IsLiveMapEntry{
+		Liveness: livenesspb.Liveness{Membership: livenesspb.MembershipStatus_DECOMMISSIONING},
+		IsLive:   false,
+	}
+
+	{
+		// The madrid phantom window: 5 healthy voters, all live and
+		// membership-active, but clusterNodes reads phantom-low. The floor holds
+		// needed at 5, so the range is neither over- nor under-replicated.
+		// Without the floor this read over-replicated (needed 3 < live 5).
+		ctr, down, under, over := calcRangeCounter(10, fiveVoters, leaseStatus, liveness.IsLiveMap{
+			1: live, 2: live, 3: live, 4: live, 5: live,
+		}, 5 /* numVoters */, 5 /* numReplicas */, 3 /* clusterNodes */)
+
+		require.True(t, ctr)
+		require.False(t, down)
+		require.False(t, under)
+		require.False(t, over)
+	}
+
+	{
+		// Phantom window with two voters absent from the liveness map (the actual
+		// madrid state on n1). Absent voters still count toward the floor, so
+		// needed stays 5 against 3 live: under-replicated — the honest signal that
+		// the leaseholder cannot account for two of its replicas. Without the
+		// floor this read quiet (needed 3 == live 3): blind exactly when it
+		// mattered.
+		ctr, down, under, over := calcRangeCounter(10, fiveVoters, leaseStatus, liveness.IsLiveMap{
+			1: live, 2: live, 3: live,
+		}, 5 /* numVoters */, 5 /* numReplicas */, 3 /* clusterNodes */)
+
+		require.True(t, ctr)
+		require.False(t, down)
+		require.True(t, under)
+		require.False(t, over)
+	}
+
+	{
+		// Dead-node decommission in progress: the non-active membership excludes
+		// node 5 from the floor (4, matching the allocator's target), so the range
+		// reads neither over- nor under-replicated while the dead replica is shed.
+		// Without the floor this read over-replicated (needed 3 < live 4) while
+		// the allocator was still repairing.
+		ctr, down, under, over := calcRangeCounter(10, fiveVoters, leaseStatus, liveness.IsLiveMap{
+			1: live, 2: live, 3: live, 4: live, 5: deadDecommissioning,
+		}, 5 /* numVoters */, 5 /* numReplicas */, 4 /* clusterNodes */)
+
+		require.True(t, ctr)
+		require.False(t, down)
+		require.False(t, under)
+		require.False(t, over)
+	}
+
+	{
+		// The even steady state: 4 healthy voters on a 4-node cluster. The floor
+		// holds needed at 4, so the state the allocator deliberately preserves is
+		// not reported as permanently over-replicated (needed 3 < live 4 before).
+		ctr, down, under, over := calcRangeCounter(10, fourVoters, leaseStatus, liveness.IsLiveMap{
+			1: live, 2: live, 3: live, 4: live,
+		}, 5 /* numVoters */, 5 /* numReplicas */, 4 /* clusterNodes */)
+
+		require.True(t, ctr)
+		require.False(t, down)
+		require.False(t, under)
+		require.False(t, over)
+	}
+
+	{
+		// Genuine over-replication versus the configured RF is still detected:
+		// the floor is capped at numVoters, so 5 live voters against a configured
+		// RF of 3 reads over-replicated.
+		ctr, down, under, over := calcRangeCounter(10, fiveVoters, leaseStatus, liveness.IsLiveMap{
+			1: live, 2: live, 3: live, 4: live, 5: live,
+		}, 3 /* numVoters */, 3 /* numReplicas */, 5 /* clusterNodes */)
 
 		require.True(t, ctr)
 		require.False(t, down)
