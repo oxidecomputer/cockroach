@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/cockroach/pkg/keys"
+	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/liveness"
 	"github.com/cockroachdb/cockroach/pkg/kv/kvserver/liveness/livenesspb"
 	"github.com/cockroachdb/cockroach/pkg/roachpb"
 	"github.com/cockroachdb/cockroach/pkg/util/leaktest"
@@ -317,4 +318,150 @@ func TestAllocatorPolicyFloorDeadNodeDecommission(t *testing.T) {
 			require.Equalf(t, s.wantAction.String(), action.String(), "step %q", s.name)
 		})
 	}
+}
+
+// TODO-RAINCLAUDE: unit tests for the pure helpers in
+// allocator_policyfloor.go. Named scenarios below; the invariants are proved
+// separately by exhaustive enumeration in
+// TestPolicyFloorNeededVotersInvariants.
+func TestPolicyFloorNeededVoters(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+	defer log.Scope(t).Close(t)
+
+	cases := []struct {
+		name                                          string
+		needed, have, policyRemoved, configured, want int
+	}{
+		{"madrid: healthy RF-5 range, phantom count downshifted needed to 3", 3, 5, 0, 5, 5},
+		{"small cluster: RF-5 range with 3 voters on 3 nodes", 3, 3, 0, 5, 3},
+		{"under-replicated: the floor never lowers the target", 5, 3, 0, 5, 5},
+		{"live decommission 2 of 5, phantom count", 3, 5, 2, 5, 3},
+		{"dead-node decommission 1 of 5", 3, 5, 1, 5, 4},
+		{"even steady state: 4 healthy voters on 4 nodes", 3, 4, 0, 5, 4},
+		{"over-replicated beyond the configured RF", 5, 6, 0, 5, 5},
+		{"over-replicated beyond the configured RF, phantom count", 3, 6, 0, 5, 5},
+		{"num_replicas lowered 5 -> 3: the cap lets the trim proceed", 3, 5, 0, 3, 3},
+		{"all voters policy-removed", 3, 5, 5, 5, 3},
+		{"no voters", 3, 0, 0, 5, 3},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			require.Equal(t, c.want,
+				policyFloorNeededVoters(c.needed, c.have, c.policyRemoved, c.configured))
+		})
+	}
+}
+
+// TODO-RAINCLAUDE: the floor's invariants, proved by exhaustive enumeration.
+// Real replica counts and RFs live in [0, 7], so full coverage of the
+// meaningful input space is a few thousand cases — strictly stronger than
+// sampling and dependency-free.
+func TestPolicyFloorNeededVotersInvariants(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+	defer log.Scope(t).Close(t)
+
+	const max = 7
+	for needed := 0; needed <= max; needed++ {
+		for have := 0; have <= max; have++ {
+			for removed := 0; removed <= have; removed++ {
+				for configured := 0; configured <= max; configured++ {
+					got := policyFloorNeededVoters(needed, have, removed, configured)
+					args := []interface{}{needed, have, removed, configured}
+
+					// The floor only ever raises the target: the downshift's
+					// small-cluster and decommission behavior is preserved.
+					require.GreaterOrEqualf(t, got, needed,
+						"floor lowered the target (needed=%d have=%d removed=%d configured=%d)", args...)
+					if got > needed {
+						// When it raises, it raises to no more than the configured RF
+						// (lowering num_replicas still down-replicates)...
+						require.LessOrEqualf(t, got, configured,
+							"floor exceeded the configured RF (needed=%d have=%d removed=%d configured=%d)", args...)
+						// ...and to no more than the voters actually held on
+						// policy-active nodes (the floor cannot invent replicas).
+						require.LessOrEqualf(t, got, have-removed,
+							"floor invented replicas (needed=%d have=%d removed=%d configured=%d)", args...)
+					}
+					// The madrid invariant: with no policy-removed voters and
+					// haveVoters within the configured RF, a range is never sized
+					// below the replicas it already has — no phantom-low node count
+					// can authorize a trim.
+					if removed == 0 && have <= configured {
+						require.GreaterOrEqualf(t, got, have,
+							"healthy in-RF range sized below itself (needed=%d have=%d removed=%d configured=%d)", args...)
+					}
+					// Monotone: one more policy-removed voter never raises the target.
+					if removed < have {
+						require.GreaterOrEqualf(t, got,
+							policyFloorNeededVoters(needed, have, removed+1, configured),
+							"extra policy removal raised the target (needed=%d have=%d removed=%d configured=%d)", args...)
+					}
+					// Idempotent: re-applying the floor changes nothing.
+					require.Equalf(t, got, policyFloorNeededVoters(got, have, removed, configured),
+						"floor is not idempotent (needed=%d have=%d removed=%d configured=%d)", args...)
+				}
+			}
+		}
+	}
+}
+
+// TODO-RAINCLAUDE: exhaustive over the NodeLivenessStatus enum via its
+// generated name map, so adding a status to the proto forces an explicit
+// policy-floor classification here instead of silently inheriting the
+// fail-safe default.
+func TestNodeLivenessStatusIsPolicyRemoved(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+	defer log.Scope(t).Close(t)
+
+	want := map[livenesspb.NodeLivenessStatus]bool{
+		livenesspb.NodeLivenessStatus_UNKNOWN:         false, // no liveness record (cold cache): fail-safe
+		livenesspb.NodeLivenessStatus_DEAD:            false, // deadness is health, not policy
+		livenesspb.NodeLivenessStatus_UNAVAILABLE:     false, // excluding it would open a blind RemoveVoter window
+		livenesspb.NodeLivenessStatus_LIVE:            false,
+		livenesspb.NodeLivenessStatus_DECOMMISSIONING: true,  // operator policy, node live
+		livenesspb.NodeLivenessStatus_DECOMMISSIONED:  true,  // operator policy, node dead
+		livenesspb.NodeLivenessStatus_DRAINING:        false, // restart in progress, not removal
+	}
+
+	for value, name := range livenesspb.NodeLivenessStatus_name {
+		status := livenesspb.NodeLivenessStatus(value)
+		expected, ok := want[status]
+		require.Truef(t, ok,
+			"NodeLivenessStatus %s has no policy-floor classification; decide whether it represents operator removal",
+			name)
+		require.Equalf(t, expected, nodeLivenessStatusIsPolicyRemoved(status), "status %s", name)
+	}
+	require.Len(t, want, len(livenesspb.NodeLivenessStatus_name))
+}
+
+func TestPolicyRemovedVoterCount(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+	defer log.Scope(t).Close(t)
+
+	voters := []roachpb.ReplicaDescriptor{
+		{NodeID: 1, StoreID: 10, ReplicaID: 1},
+		{NodeID: 2, StoreID: 20, ReplicaID: 2},
+		{NodeID: 3, StoreID: 30, ReplicaID: 3},
+		{NodeID: 4, StoreID: 40, ReplicaID: 4},
+		{NodeID: 5, StoreID: 50, ReplicaID: 5},
+	}
+	livenessMap := liveness.IsLiveMap{
+		// Node 1 is deliberately absent from the map: an unverifiable replica
+		// counts toward the floor, not as removed.
+		2: {IsLive: true},  // membership active, live
+		3: {IsLive: false}, // membership active, dead: health, not policy
+		4: { // live decommissioning
+			Liveness: livenesspb.Liveness{Membership: livenesspb.MembershipStatus_DECOMMISSIONING},
+			IsLive:   true,
+		},
+		5: { // dead and fully decommissioned
+			Liveness: livenesspb.Liveness{Membership: livenesspb.MembershipStatus_DECOMMISSIONED},
+			IsLive:   false,
+		},
+	}
+
+	require.Equal(t, 2, policyRemovedVoterCount(voters, livenessMap))
+	require.Equal(t, 0, policyRemovedVoterCount(nil, livenessMap))
+	require.Equal(t, 0, policyRemovedVoterCount(voters, liveness.IsLiveMap{}))
 }

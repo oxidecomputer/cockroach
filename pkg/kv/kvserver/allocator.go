@@ -690,39 +690,23 @@ func (a *Allocator) computeAction(
 	clusterNodes := a.storePool.ClusterNodeCount()
 	neededVoters := GetNeededVoters(conf.GetNumVoters(), clusterNodes)
 
-	// TODO-RAINCLAUDE: experiment 2 for omicron#10658 — policy-floor the effective
-	// RF. The effective replication factor must be driven exclusively by operator
-	// policy: the configured RF (conf.GetNumVoters()) and operator decommissioning.
-	// It must NOT be driven by transient cluster health. GetNeededVoters above
-	// derives neededVoters from clusterNodes, which is the leaseholder's cache-based
-	// node count and can read phantom-low when the liveness cache is cold (the
-	// omicron#10658 trigger). We therefore floor neededVoters at the number of this
-	// range's own voters that sit on nodes the operator has NOT directed out of the
-	// cluster, capped at the configured RF. The excluded set is keyed on liveness
-	// MEMBERSHIP (DECOMMISSIONING or DECOMMISSIONED), not on the decommissioningVoters
-	// status set above: a dead node under decommission reports DECOMMISSIONED, which
-	// classifies as storeStatusDead, and it must still lower the floor — otherwise
-	// its replica could only ever be replaced, never shed, and on a cluster with no
-	// spare node the decommission would stall in purgatory forever. A
-	// dead-but-not-decommissioned voter still counts toward the floor, so a cold
-	// cache can never size a healthy range below the replicas it already has and
-	// trim it; only lowering num_replicas or decommissioning (both operator policy)
-	// can reduce the effective RF. Safety of the subtraction: whenever it drops the
-	// floor below haveVoters, the excluded replicas are by construction either
-	// live-decommissioning (handled by the RemoveDecommissioningVoter branch below)
-	// or dead (handled by RemoveDeadVoter, whose removal candidates the replicate
-	// queue restricts to dead replicas), so the liveness-blind RemoveVoter branch
-	// still fires only when haveVoters exceeds the configured RF. The range
-	// descriptor is authoritative (Raft-replicated), so this needs no KV scan.
+	// TODO-RAINCLAUDE: experiment 2 for omicron#10658 — apply the policy floor
+	// to the allocator's target; see allocator_policyfloor.go for the rule and
+	// the helpers' invariants. clusterNodes above is the leaseholder's
+	// cache-based node count and can read phantom-low when the liveness cache
+	// is cold (the omicron#10658 trigger); the floor keeps a transient count
+	// from sizing a range below the voters it already holds on nodes the
+	// operator has not decommissioned, so the liveness-blind RemoveVoter branch
+	// below fires only when haveVoters exceeds the configured RF. The excluded
+	// set deliberately differs from decommissioningVoters above (status-keyed,
+	// live nodes only): a policy-removed voter is either live-decommissioning
+	// (handled by the RemoveDecommissioningVoter branch) or dead (handled by
+	// RemoveDeadVoter, whose removal candidates the replicate queue restricts
+	// to dead replicas). The range descriptor is authoritative
+	// (Raft-replicated), so this needs no KV scan.
 	policyRemovedVoters := a.storePool.decommissioningOrDecommissionedReplicas(voterReplicas)
-	if policyFloor := haveVoters - len(policyRemovedVoters); policyFloor > neededVoters {
-		if maxRF := int(conf.GetNumVoters()); policyFloor > maxRF {
-			policyFloor = maxRF
-		}
-		if policyFloor > neededVoters {
-			neededVoters = policyFloor
-		}
-	}
+	neededVoters = policyFloorNeededVoters(
+		neededVoters, haveVoters, len(policyRemovedVoters), int(conf.GetNumVoters()))
 
 	desiredQuorum := computeQuorum(neededVoters)
 	quorum := computeQuorum(haveVoters)

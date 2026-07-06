@@ -181,33 +181,15 @@ func calcRangeCounter(
 	if rangeCounter {
 		neededVoters := GetNeededVoters(numVoters, clusterNodes)
 		// TODO-RAINCLAUDE: omicron#10658 — the same policy floor computeAction
-		// applies, so the gauges agree with the allocator. Without it, a phantom-low
-		// clusterNodes makes ranges_underreplicated go blind exactly when it matters
-		// and false-alarms ranges_overreplicated on every healthy RF-5 range; a
-		// cluster legitimately settled above the downshifted target (e.g. 4 voters
-		// on 4 nodes after a decommission) reads over-replicated forever. The floor
-		// counts this range's voters on membership-active nodes, capped at the
-		// configured RF. A voter absent from the liveness map counts toward the
-		// floor (fail-safe: an unverifiable replica must not lower the target), so
-		// during a cold-cache window a healthy range reads as under-replicated —
-		// the honest signal that the leaseholder cannot account for its replicas —
-		// rather than over-replicated. Metric-only: keyed on raw membership, which
-		// may diverge from the allocator's floor for the brief window where a
-		// decommissioning node is unavailable but not yet dead.
-		voterFloor := 0
-		for _, rd := range desc.Replicas().VoterDescriptors() {
-			if entry, ok := livenessMap[rd.NodeID]; !ok || entry.Membership.Active() {
-				voterFloor++
-			}
-		}
-		if voterFloor > neededVoters {
-			if maxRF := int(numVoters); voterFloor > maxRF {
-				voterFloor = maxRF
-			}
-			if voterFloor > neededVoters {
-				neededVoters = voterFloor
-			}
-		}
+		// applies, so the gauges agree with the allocator; see
+		// allocator_policyfloor.go. Without it, a phantom-low clusterNodes makes
+		// ranges_underreplicated go blind exactly when it matters and false-alarms
+		// ranges_overreplicated on every healthy RF-5 range, and states the
+		// allocator deliberately preserves (e.g. 4 voters on 4 nodes after a
+		// decommission) read over-replicated forever.
+		voterDescs := desc.Replicas().VoterDescriptors()
+		neededVoters = policyFloorNeededVoters(neededVoters, len(voterDescs),
+			policyRemovedVoterCount(voterDescs, livenessMap), int(numVoters))
 		neededNonVoters := GetNeededNonVoters(int(numVoters), int(numReplicas-numVoters), clusterNodes)
 		status := desc.Replicas().ReplicationStatus(func(rDesc roachpb.ReplicaDescriptor) bool {
 			return livenessMap[rDesc.NodeID].IsLive
