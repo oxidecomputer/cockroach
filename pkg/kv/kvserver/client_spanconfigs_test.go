@@ -12,6 +12,7 @@ package kvserver_test
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 
 	"github.com/cockroachdb/cockroach/pkg/base"
@@ -44,7 +45,7 @@ func TestSpanConfigUpdateAppliedToReplica(t *testing.T) {
 		cluster.MakeTestingClusterSettings(),
 		nil,
 	)
-	mockSubscriber := newMockSpanConfigSubscriber(spanConfigStore)
+	mockSubscriber := newMockSpanConfigSubscriber(hlc.Timestamp{WallTime: 1}, spanConfigStore)
 
 	ctx := context.Background()
 
@@ -101,6 +102,56 @@ func TestSpanConfigUpdateAppliedToReplica(t *testing.T) {
 	})
 }
 
+// TestGetConfReaderGatedUntilSubscribed verifies the omicron#10658 backport of
+// #98422: GetConfReader must refuse to hand out a span config reader — so every
+// needsSystemConfig queue (replicate, split, mvccGC, merge) skips — until the
+// span config subscriber has been updated at least once. Before this gate, a
+// freshly-restarted store would fall back to the static default span config
+// (num_replicas=3, default range sizes/GC TTL) and the replicate queue would
+// down-replicate healthy ranges to 3.
+func TestGetConfReaderGatedUntilSubscribed(t *testing.T) {
+	defer leaktest.AfterTest(t)()
+
+	spanConfigStore := spanconfigstore.New(
+		roachpb.TestingDefaultSpanConfig(),
+		cluster.MakeTestingClusterSettings(),
+		nil,
+	)
+	// Start with an un-updated subscriber: LastUpdated() is the empty timestamp,
+	// modelling a store that has restarted but not yet caught up on span configs.
+	mockSubscriber := newMockSpanConfigSubscriber(hlc.Timestamp{}, spanConfigStore)
+
+	ctx := context.Background()
+	args := base.TestServerArgs{
+		Knobs: base.TestingKnobs{
+			SpanConfig: &spanconfig.TestingKnobs{
+				StoreKVSubscriberOverride: mockSubscriber,
+			},
+		},
+	}
+	s, _, _ := serverutils.StartServer(t, args)
+	defer s.Stopper().Stop(ctx)
+
+	_, err := s.InternalExecutor().(sqlutil.InternalExecutor).ExecEx(ctx, "inline-exec", nil,
+		sessiondata.InternalExecutorOverride{User: security.RootUserName()},
+		`SET CLUSTER SETTING spanconfig.store.enabled = true`)
+	require.NoError(t, err)
+
+	store, err := s.GetStores().(*kvserver.Stores).GetStore(s.GetFirstStoreID())
+	require.NoError(t, err)
+
+	// Not yet subscribed: the reader is withheld and queues skip.
+	confReader, err := store.GetConfReader(ctx)
+	require.Nil(t, confReader)
+	require.Error(t, err)
+
+	// Once the subscriber reports an update, the reader is handed out.
+	mockSubscriber.setLastUpdated(hlc.Timestamp{WallTime: 1})
+	confReader, err = store.GetConfReader(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, confReader)
+}
+
 // TestFallbackSpanConfigOverride ensures that
 // COCKROACH_FALLBACK_SPANCONFIG_NUM_REPLICAS_OVERRIDE works as expected.
 func TestFallbackSpanConfigNumReplicasOverride(t *testing.T) {
@@ -120,13 +171,24 @@ func TestFallbackSpanConfigNumReplicasOverride(t *testing.T) {
 
 type mockSpanConfigSubscriber struct {
 	callback func(ctx context.Context, config roachpb.Span)
+	// lastUpdatedNanos is the WallTime returned by LastUpdated(); accessed
+	// atomically so a test can flip the "subscribed yet?" state on a live store.
+	lastUpdatedNanos int64
 	spanconfig.Store
 }
 
 var _ spanconfig.KVSubscriber = &mockSpanConfigSubscriber{}
 
-func newMockSpanConfigSubscriber(store spanconfig.Store) *mockSpanConfigSubscriber {
-	return &mockSpanConfigSubscriber{Store: store}
+func newMockSpanConfigSubscriber(
+	lastUpdated hlc.Timestamp, store spanconfig.Store,
+) *mockSpanConfigSubscriber {
+	m := &mockSpanConfigSubscriber{Store: store}
+	m.setLastUpdated(lastUpdated)
+	return m
+}
+
+func (m *mockSpanConfigSubscriber) setLastUpdated(ts hlc.Timestamp) {
+	atomic.StoreInt64(&m.lastUpdatedNanos, ts.WallTime)
 }
 
 func (m *mockSpanConfigSubscriber) NeedsSplit(ctx context.Context, start, end roachpb.RKey) bool {
@@ -152,7 +214,7 @@ func (m *mockSpanConfigSubscriber) GetProtectionTimestamps(
 }
 
 func (m *mockSpanConfigSubscriber) LastUpdated() hlc.Timestamp {
-	panic("unimplemented")
+	return hlc.Timestamp{WallTime: atomic.LoadInt64(&m.lastUpdatedNanos)}
 }
 
 func (m *mockSpanConfigSubscriber) Subscribe(callback func(context.Context, roachpb.Span)) {
