@@ -2204,6 +2204,19 @@ func (s *Store) GetConfReader(ctx context.Context) (spanconfig.StoreReader, erro
 		return sysCfg, nil
 	}
 
+	// TODO-RAINCLAUDE: backport of #98422 (omicron#10658). Do not hand queues a
+	// reader until the span-config subscriber has been updated at least once.
+	// Before this, a freshly-restarted store falls back to the static default
+	// span config (num_replicas=3, default range sizes/GC TTL), which the
+	// replicate/split/mvccGC/merge queues would obtusely act on — the replicate
+	// queue down-replicating healthy ranges to 3, the merge queue potentially
+	// collapsing the keyspace, etc. Gating here covers every needsSystemConfig
+	// queue at once, at the source, rather than teaching each consumer to
+	// distrust the default.
+	if s.cfg.SpanConfigSubscriber.LastUpdated().IsEmpty() {
+		return nil, errSysCfgUnavailable
+	}
+
 	return s.cfg.SpanConfigSubscriber, nil
 }
 
