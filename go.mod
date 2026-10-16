@@ -140,19 +140,18 @@ require (
 	go.opentelemetry.io/otel/exporters/zipkin v1.0.0-RC3
 	go.opentelemetry.io/otel/sdk v1.0.0-RC3
 	go.opentelemetry.io/otel/trace v1.0.0-RC3
-	golang.org/x/crypto v0.45.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
-	golang.org/x/net v0.47.0
+	golang.org/x/net v0.54.0
 	golang.org/x/oauth2 v0.0.0-20220309155454-6242fa91716a
 	golang.org/x/perf v0.0.0-20180704124530-6e6d33e29852
-	golang.org/x/sync v0.18.0
-	golang.org/x/sys v0.38.0
-	golang.org/x/term v0.37.0
-	golang.org/x/text v0.31.0
+	golang.org/x/sync v0.20.0
+	golang.org/x/sys v0.45.0
+	golang.org/x/term v0.43.0
+	golang.org/x/text v0.37.0
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
-	golang.org/x/tools v0.39.0
+	golang.org/x/tools v0.44.0
 	google.golang.org/api v0.69.0
-	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3
 	google.golang.org/grpc v1.46.0
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -285,10 +284,11 @@ require (
 	go.opentelemetry.io/proto/otlp v0.9.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20231108232855-2478ac86f678 // indirect
-	golang.org/x/mod v0.30.0 // indirect
+	golang.org/x/mod v0.35.0 // indirect
 	golang.org/x/tools/go/expect v0.1.1-deprecated // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3 // indirect
 )
 
 require (
