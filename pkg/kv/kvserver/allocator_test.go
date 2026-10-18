@@ -6683,13 +6683,15 @@ func TestAllocatorComputeActionDynamicNumReplicas(t *testing.T) {
 			decommissioning:     []roachpb.StoreID{1, 2, 3},
 		},
 		{
-			// Four live stores and one dead one, so the effective replication
-			// factor would be even (four), in which case we drop down one more
-			// to three. Then the right thing becomes removing the dead replica
-			// from the range at hand, rather than trying to replace it.
+			// Four replicas, one dead, none decommissioning. GetNeededVoters still
+			// downshifts to 3 (expectedNumReplicas), but the policy floor (experiment
+			// 2) holds the effective target at the 4 non-decommissioned replicas, so
+			// ComputeAction *replaces* the dead voter rather than trimming to 3.
+			// Deadness is transient and is not operator policy, so the RF is not
+			// reduced for it. (Was: AllocatorRemoveDeadVoter.)
 			storeList:           []roachpb.StoreID{1, 2, 3, 4},
 			expectedNumReplicas: 3,
-			expectedAction:      AllocatorRemoveDeadVoter,
+			expectedAction:      AllocatorReplaceDeadVoter,
 			live:                []roachpb.StoreID{1, 2, 3, 5},
 			unavailable:         nil,
 			dead:                []roachpb.StoreID{4},
@@ -6741,10 +6743,16 @@ func TestAllocatorComputeActionDynamicNumReplicas(t *testing.T) {
 			decommissioning:     nil,
 		},
 		{
-			// Three again, on account of avoiding the even four.
+			// Four healthy replicas, none decommissioning. The original code
+			// trimmed the even four down to three (GetNeededVoters still reports 3,
+			// expectedNumReplicas). The policy floor (experiment 2) holds the target
+			// at the 4 non-decommissioned replicas, so ComputeAction leaves the
+			// range alone: it will not remove a healthy replica to satisfy a
+			// transiently-derived target. The even-quorum nicety yields to the
+			// don't-trim-healthy-replicas invariant. (Was: AllocatorRemoveVoter.)
 			storeList:           []roachpb.StoreID{1, 2, 3, 4},
 			expectedNumReplicas: 3,
-			expectedAction:      AllocatorRemoveVoter,
+			expectedAction:      AllocatorConsiderRebalance,
 			live:                []roachpb.StoreID{1, 2, 3, 4},
 			unavailable:         nil,
 			dead:                nil,

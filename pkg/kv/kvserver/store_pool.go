@@ -598,6 +598,27 @@ func (sp *StorePool) decommissioningReplicas(
 	return
 }
 
+// TODO-RAINCLAUDE: omicron#10658 policy floor — the replicas the operator has
+// directed out of the cluster, per nodeLivenessStatusIsPolicyRemoved (see
+// allocator_policyfloor.go for the predicate's rationale and fail-safe
+// properties). Distinct from decommissioningReplicas above, which keys on
+// storeStatusDecommissioning and therefore only matches LIVE decommissioning
+// nodes; a dead node under decommission classifies as storeStatusDead but is
+// still policy-removed.
+func (sp *StorePool) decommissioningOrDecommissionedReplicas(
+	repls []roachpb.ReplicaDescriptor,
+) (inactive []roachpb.ReplicaDescriptor) {
+	now := sp.clock.Now().GoTime()
+	timeUntilStoreDead := TimeUntilStoreDead.Get(&sp.st.SV)
+
+	for _, repl := range repls {
+		if nodeLivenessStatusIsPolicyRemoved(sp.nodeLivenessFn(repl.NodeID, now, timeUntilStoreDead)) {
+			inactive = append(inactive, repl)
+		}
+	}
+	return inactive
+}
+
 // ClusterNodeCount returns the number of nodes that are possible allocation
 // targets. This includes dead nodes, but not decommissioning or decommissioned
 // nodes.
