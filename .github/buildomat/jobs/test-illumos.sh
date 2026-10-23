@@ -2,7 +2,7 @@
 #:
 #: name = "test-illumos"
 #: variety = "basic"
-#: target = "helios-2.0-16c64gb"
+#: target = "helios-3.0-16c64gb"
 
 set -o errexit
 set -o pipefail

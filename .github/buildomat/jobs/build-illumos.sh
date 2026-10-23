@@ -2,7 +2,7 @@
 #:
 #: name = "build-illumos"
 #: variety = "basic"
-#: target = "helios-2.0"
+#: target = "helios-3.0"
 #: output_rules = [
 #:	"=/work/oxidecomputer/cockroach/cockroach.tgz",
 #:	"=/work/oxidecomputer/cockroach/cockroach.tgz.sha256",
